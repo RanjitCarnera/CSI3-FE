@@ -1,0 +1,11 @@
+{
+  "src": "./src",
+  "schema": "./schema.graphql",
+  "artifactDirectory": "./src/__generated__",
+  "language": "typescript",
+  "customScalars": {
+    "ZonedDateTIme": "string",
+    "BigDecimal": "number"
+  },
+  "noFutureProofEnums": true
+}

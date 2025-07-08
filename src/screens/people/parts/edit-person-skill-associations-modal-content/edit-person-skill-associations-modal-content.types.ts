@@ -1,0 +1,5 @@
+import { editPersonSkillAssociationsModalContent_PersonFragment$key } from "@relay/editPersonSkillAssociationsModalContent_PersonFragment.graphql";
+
+export interface EditPersonSkillAssociationsModalContentProps {
+	personFragmentRef: editPersonSkillAssociationsModalContent_PersonFragment$key;
+}

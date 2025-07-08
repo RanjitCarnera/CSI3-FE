@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    [
+      "relay",
+      {
+        "artifactDirectory": "./src/__generated__"
+      }
+    ],
+    ["babel-plugin-twin"],
+    ["babel-plugin-macros"],
+    ["babel-plugin-styled-components"]
+  ]
+}

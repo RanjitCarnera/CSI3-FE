@@ -1,0 +1,1 @@
+export * from "./select-skill-assessment-templates.component"

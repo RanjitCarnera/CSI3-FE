@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@relay/*": [
+        "./src/__generated__/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@assets/*": [
+        "./src/assets/*"
+      ],
+      "@icons/*": [
+        "./src/core-style/icons/*"
+      ],
+      "@typography/*": [
+        "./src/core-style/typography/*"
+      ],
+      "@utils/*": [
+        "./src/utils/*"
+      ],
+      "@screens/*": [
+        "./src/screens/*"
+      ],
+      "@redux/*": [
+        "./src/redux/*"
+      ],
+      "@corestyle/*": [
+        "./src/core-style/*"
+      ],
+      "@i18n/*": [
+        "./src/i18n/*"
+      ]
+    }
+  }
+}

@@ -1,0 +1,40 @@
+name: Test & Deploy (Staging)
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  test-and-deploy:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: fregante/setup-git-user@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '19.x'
+          always-auth: true
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - uses: actions/cache@v4
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - run: printf 'registry=https://registry.npmjs.org\n@thekeytechnology:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> .npmrc
+      - run: yarn install
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_TKT }}
+          YARN_REGISTRY: "https://npm.pkg.github.com"
+      - run: ./node_modules/graphql-fetch-schema/bin/graphql-fetch-schema https://staging.api.constructionintelligence.com/api/graphql -g
+      - run: yarn relay
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_TKT }}
+      - run: yarn build:staging
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_TKT }}

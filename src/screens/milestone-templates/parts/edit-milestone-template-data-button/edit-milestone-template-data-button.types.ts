@@ -1,0 +1,5 @@
+import { type editMilestoneTemplateDataButton_MilestoneTemplateFragment$key } from "@relay/editMilestoneTemplateDataButton_MilestoneTemplateFragment.graphql";
+
+export interface EditMilestoneTemplateDataButtonProps {
+	milestoneTemplateFragmentRef: editMilestoneTemplateDataButton_MilestoneTemplateFragment$key;
+}

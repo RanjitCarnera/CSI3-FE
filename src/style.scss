@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+html, body {
+  font-family: 'Roboto', sans-serif;
+  height: 100% !important;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  max-height: 100vh;
+}
+
+
+#root {
+  height: 100%;
+  width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+:root {
+  --dark: #26262b;
+  --dark-2: #7D85A7;
+
+  --primary-color: #082694;
+  --primary-color-darker: #1240F5;
+  --background-color: #EAEFFA;
+  --dark-green: #07767d;
+  --success: #00CC25;
+  --warning: #F59E0B;
+  --danger: #FF1500;
+  --border-radius: 8px;
+  --text: #36416E;
+  --text-light: #7D85A7;
+  font-size: 14px;
+}
+
+
+.background {
+  background-color: var(--background-color);
+}
+
+.danger {
+  color: var(--danger)
+}
+
+.success {
+  color: var(--success)
+}
+
+.warning {
+  color: var(--warning) !important;
+}
+
+
+.p-error {
+  color: var(--danger);
+}
+
+.notosans {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+h1 {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+
+h2 {
+  color: var(--dark);
+  font-size: 1.6rem;
+}
+
+h3 {
+  color: var(--dark);
+
+  font-size: 1rem;
+}
+
+.dark {
+  color: var(--dark);
+}
+
+.dark-green {
+  color: var(--dark-green)
+}
+
+.text {
+  font-family: 'Noto Sans', sans-serif;
+  color: var(--text);
+}
+
+.text-light {
+  font-family: 'Noto Sans', sans-serif;
+  color: var(--text-light) !important;
+}
+
+.small-text {
+  font-size: 0.9rem;
+  font-family: 'Noto Sans', sans-serif;
+  color: var(--text);
+}
+
+.tiny-text {
+  font-size: 0.7rem;
+  font-family: 'Noto Sans', sans-serif;
+  color: var(--text);
+}
+
+div, p, span, a, label, h1, h2, h3, h4, h5, h6 {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+a {
+  color: var(--dark-green);
+}
+
+
+label {
+  padding-left: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--dark-2)
+}
+
+
+.pac-container {
+  z-index: 999999999 !important;
+}
+
+@media print {
+  .hide-print {
+    display: none !important;
+  }
+
+  .to-table-print {
+    display: table !important;
+  }
+
+  .to-inline-block-print {
+    display: inline-block !important;
+    vertical-align: top !important;
+  }
+}
+
+/* Theme overwrites for PrimeReact Accordion (Tags) */
+.p-accordion .p-accordion-header .p-accordion-header-link {
+  background: white;
+  border: none;
+  color: #374151;
+  padding: 1rem;
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+  background: white;
+  border-color: transparent;
+  color: #374151;
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight:hover .p-accordion-header-link {
+  border-color: transparent;
+  color: var(--primary-color);
+}
+
+.p-accordion .p-accordion-content {
+  border: none;
+  background: white;
+  padding: 0rem !important;
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:focus {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.p-accordion .p-accordion-header .p-accordion-header-link:hover {
+  background: #f9fafb;
+  border-color: transparent;
+  color: var(--primary-color);
+}
