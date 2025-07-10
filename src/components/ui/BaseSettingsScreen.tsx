@@ -184,7 +184,20 @@ export const SETTINGS_MENU_ITEMS: Array<MenuItem & HasRequiredPermissionsType> =
 		template: (item) => <RouterMenuItem item={item} />,
 		requiredPermissions: ["UserInAccountPermission_Management_Management"],
 	},
-
+	{
+		label: "Generate API Key & Secret",
+		url: "/settings/generate-api-key",
+		icon: "pi pi-key",
+		template: (item) => <RouterMenuItem item={item} />,
+		requiredPermissions: ["UserInAccountPermission_Management_Management"],
+	},
+	{
+		label: "API Document",
+		url: "/settings/api-document",
+		icon: "pi pi-file",
+		template: (item) => <RouterMenuItem item={item} />,
+		requiredPermissions: ["UserInAccountPermission_Management_Management"],
+	},
 	{
 		label: "Personal Settings",
 		template: (item) => <h3>{item.label}</h3>,

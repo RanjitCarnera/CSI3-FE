@@ -73,6 +73,8 @@ import { TWO_FACTOR_AUTH_SETUP_ROUTE, TwoFASetupScreen } from "@screens/two-fact
 import { UsersAdminScreen } from "@screens/users-admin/UsersAdminScreen";
 import { RedirectTo } from "../navigation/RedirectTo";
 import { type RouteDefinition } from "../navigation/RouteDefinition";
+import { GenerateApiKeyScreen } from "@screens/generate-api-key/GenerateApiKeyScreen";
+import ApiDocumentScreen from "@screens/api-document/ApiDocumentScreen";
 
 export const Routes: RouteDefinition[] = [
 	{
@@ -139,6 +141,16 @@ export const Routes: RouteDefinition[] = [
 		requiredPermissions: ["UserInAccountPermission_Management_Management"],
 		path: "/settings/groups",
 		element: <GroupsScreen />,
+	},
+	{
+		requiredPermissions: ["UserInAccountPermission_Management_Management"],
+		path: "/settings/generate-api-key",
+		element: <GenerateApiKeyScreen />,
+	},
+	{
+		requiredPermissions: ["UserInAccountPermission_Management_Management"],
+		path: "/settings/api-document",
+		element: <ApiDocumentScreen />,
 	},
 	{
 		requiredPermissions: [

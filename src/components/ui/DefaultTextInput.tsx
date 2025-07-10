@@ -17,6 +17,7 @@ import { TkButton } from "@components/ui/TkButton";
 import { TkButtonLink } from "@components/ui/TkButtonLink";
 import { selectHasPermissions } from "@redux/CurrentUserSlice";
 import { type ValidatedFieldConfig } from "./ValidatedField";
+import { toast } from "react-toastify";
 
 export const DefaultPhoneNumberField = ({
 	fieldValue,
@@ -358,6 +359,47 @@ export function DefaultEditorComponent({
 			disabled={disabled}
 			className={classNames({ "p-invalid": !isValid })}
 		/>
+		);
+}
+
+export function ApiSecretFieldComponent({
+  fieldName,
+  fieldValue,
+  updateField,
+  isValid,
+  disabled,
+  placeholder,
+  ...config
+}: ValidatedFieldConfig<string>) {
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(fieldValue ?? "");
+     toast.success("Secret copied.");
+    } catch (e) {
+      toast.error("Secret copied failed.");
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", width: "100%", alignItems: "center" }}>
+      <InputText
+        id={fieldName}
+        name={fieldName}
+        value={fieldValue}
+        readOnly
+        disabled={disabled}
+        placeholder={placeholder}
+        className={`w-full ${!isValid ? "p-invalid" : ""}`}
+        style={{ flexGrow: 1 }}
+        {...config}
+      />
+	  <TkButton
+		className=""
+		title={"Copy secret"}
+		icon="pi pi-copy"
+		onClick={copyToClipboard}
+	/>
+    </div>
 	);
 }
 
