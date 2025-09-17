@@ -66,9 +66,14 @@
     "build:production": "DISABLE_ESLINT_PLUGIN=true env-cmd -f .env.production react-app-rewired build",
     "build:staging": "DISABLE_ESLINT_PLUGIN=true env-cmd -f .env.staging react-app-rewired build",
     "test": "react-app-rewired test",
+    "test:coverage": "react-app-rewired test --coverage --watchAll=false",
     "relay": "relay-compiler ./relay.config.json",
     "dev": "DISABLE_ESLINT_PLUGIN=true concurrently \"yarn relay --watch\" \"yarn start\"",
-    "fetch-schema": "./node_modules/graphql-fetch-schema/bin/graphql-fetch-schema -g http://localhost:9000/api/graphql"
+    "fetch-schema": "./node_modules/graphql-fetch-schema/bin/graphql-fetch-schema -g http://localhost:9000/api/graphql",
+    "sonar": "sonar-scanner",
+    "sonar:local": "sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.login=sqp_72b7e8aec924fa0a30fc62587a6324e9d79ad62d",
+    "sonar:ci": "sonar-scanner -Dsonar.qualitygate.wait=true",
+    "sonar:full": "npm run test:coverage && npm run build && sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.login=sqp_72b7e8aec924fa0a30fc62587a6324e9d79ad62d"
   },
   "browser": {
     "fs": false,
@@ -128,6 +133,8 @@
     "prettier": "3.0.3",
     "react-app-rewired": "2.2.1",
     "relay-compiler": "14.1.0",
+    "sonar-scanner": "^3.1.0",
+    "sonarjs": "^0.2.0",
     "tailwindcss": "3.3.3",
     "twin.macro": "3.4.0",
     "webpack": "^5.88.2"
