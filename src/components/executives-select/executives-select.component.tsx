@@ -12,6 +12,7 @@ import {
 	type executivesSelect_PersonFragment$key,
 } from "@relay/executivesSelect_PersonFragment.graphql";
 import { type executivesSelect_Query } from "@relay/executivesSelect_Query.graphql";
+import { withDebounce } from "@utils/with-debounce";
 
 export const ExecutivesSelect = ({
 	scenarioId,
@@ -84,3 +85,5 @@ export const ExecutivesSelect = ({
 		/>
 	);
 };
+
+export const DebouncedExecutivesSelect = withDebounce(ExecutivesSelect);

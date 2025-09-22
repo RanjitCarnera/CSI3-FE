@@ -13,7 +13,9 @@ export const PROJECT_IN_SCENARIO_FRAGMENT = graphql`
 						name
 					}
 					validAssignmentRoles {
+						id
 						name
+						sortOrder
 						cucTemplate {
 							id
 						}

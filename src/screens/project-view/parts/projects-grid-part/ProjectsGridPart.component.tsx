@@ -12,7 +12,7 @@ import { UpdateAssignmentsFromDynamicsButton } from "@components/update-assignme
 import { ProjectStagesTabs } from "@screens/project-view/parts/project-stages-tab";
 import { ProjectViewFiltersPart } from "@screens/project-view/parts/project-view-filters-part";
 import { ExportAssignmentsButton } from "@screens/project-view/parts/projects-grid-part/parts/export-assignments-button";
-import { GroupByTagsButton } from "@screens/project-view/parts/projects-grid-part/parts/group-by-tags-button";
+import { NewGroupByTagsButton } from "@screens/project-view/parts/projects-grid-part/parts/group-by-tags-button";
 import { ProjectsGridContent } from "@screens/project-view/parts/projects-grid-part/parts/projects-grid-part-content/projects-grid-part-content.component";
 import { ProjectsGridContentFallback } from "@screens/project-view/parts/projects-grid-part/parts/projects-grid-part-content-fallback";
 import { type ProjectsGridPart_QueryFragment$key } from "../../../../__generated__/ProjectsGridPart_QueryFragment.graphql";
@@ -125,7 +125,7 @@ export const ProjectsGridPart = ({
 				<ImportAssignmentsButton className="mr-2" />
 				<ExportAssignmentsButton scenarioId={scenario.id} />
 				<ExpandProjectsButton />
-				<GroupByTagsButton />
+				<NewGroupByTagsButton />
 			</div>
 
 			<ProjectViewFiltersPart

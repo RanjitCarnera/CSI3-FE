@@ -1,14 +1,15 @@
 import { graphql } from "babel-plugin-relay/macro";
-import { useEffect, useState } from "react";
-import { fetchQuery } from "relay-runtime";
-import { readInlineData, useRelayEnvironment } from "react-relay";
-import { ValidatedFieldConfig } from "../ui/ValidatedField";
-import {
-	SkillCategorySelect_SkillCategoryFragment$data,
-	SkillCategorySelect_SkillCategoryFragment$key,
-} from "../../__generated__/SkillCategorySelect_SkillCategoryFragment.graphql";
-import { SkillCategorySelect_Query } from "../../__generated__/SkillCategorySelect_Query.graphql";
 import { Dropdown } from "primereact/dropdown";
+import { useEffect, useState } from "react";
+import { readInlineData, useRelayEnvironment } from "react-relay";
+import { fetchQuery } from "relay-runtime";
+import { withDebounce } from "@utils/with-debounce";
+import { type SkillCategorySelect_Query } from "../../__generated__/SkillCategorySelect_Query.graphql";
+import {
+	type SkillCategorySelect_SkillCategoryFragment$data,
+	type SkillCategorySelect_SkillCategoryFragment$key,
+} from "../../__generated__/SkillCategorySelect_SkillCategoryFragment.graphql";
+import { type ValidatedFieldConfig } from "../ui/ValidatedField";
 
 const QUERY = graphql`
 	query SkillCategorySelect_Query($filterByName: String, $alwaysIncludeIds: [ID!]) {
@@ -74,7 +75,9 @@ export const SkillCategorySelect = (fieldConfig: ValidatedFieldConfig<string>) =
 					value: p.id,
 				};
 			})}
-			onChange={(e) => fieldConfig.updateField(e.value)}
+			onChange={(e) => {
+				fieldConfig.updateField(e.value);
+			}}
 			filter={true}
 			filterBy={"name"}
 			onFilter={(e) => {
@@ -97,3 +100,5 @@ export const SkillCategorySelect = (fieldConfig: ValidatedFieldConfig<string>) =
 		/>
 	);
 };
+
+export const DebouncedSkillCategorySelect = withDebounce(SkillCategorySelect);

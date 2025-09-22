@@ -1,4 +1,5 @@
 import moment, { type Moment } from "moment-timezone";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { match } from "ts-pattern";
 import { selectCurrentUser } from "@redux/CurrentUserSlice";
@@ -14,22 +15,27 @@ import { type UtilizationWindowInput } from "@relay/ScenarioProjectViewScreen_Qu
 const useUtilizationWindow = (utilizationWindowOptIn?: UtilizationWindowInput | null) => {
 	const format = (date: Moment) => date.format("YYYY-MM-DD");
 	const cu = useSelector(selectCurrentUser);
-	const utilizationWindowOptOut: UtilizationWindowInput | null = match(
-		cu?.user.extension.utilizationDisplay ?? null,
-	)
-		.returnType<UtilizationWindowInput | null>()
-		.with("UtilizationForecast", () => utilizationWindowOptIn ?? null)
-		.with("UtilizationToday", () => {
-			if (utilizationWindowOptIn?.utilizationStart || utilizationWindowOptIn?.utilizationEnd)
-				return utilizationWindowOptIn;
-			return {
-				utilizationStart: format(moment()),
-				utilizationEnd: format(moment()),
-			};
-		})
-		.with(null, () => null)
-		.exhaustive();
-	return utilizationWindowOptOut;
+	const utilizationWindowOptOut: UtilizationWindowInput | null = useMemo(
+		() =>
+			match(cu?.user.extension.utilizationDisplay ?? null)
+				.returnType<UtilizationWindowInput | null>()
+				.with("UtilizationForecast", () => utilizationWindowOptIn ?? null)
+				.with("UtilizationToday", () => {
+					if (
+						utilizationWindowOptIn?.utilizationStart ||
+						utilizationWindowOptIn?.utilizationEnd
+					)
+						return utilizationWindowOptIn;
+					return {
+						utilizationStart: format(moment()),
+						utilizationEnd: format(moment()),
+					};
+				})
+				.with(null, () => null)
+				.exhaustive(),
+		[cu, utilizationWindowOptIn],
+	);
+	return useMemo(() => utilizationWindowOptOut, [utilizationWindowOptOut]);
 };
 
 /**
@@ -54,12 +60,16 @@ export const useProjectViewUtilizationWindow = () => {
  */
 export const useStaffViewUtilizationWindow = () => {
 	const filters = useSelector(selectStaffViewFilters);
-	return useUtilizationWindow(
+	const utilizationWindow = useUtilizationWindow(
 		filters.startDate && filters.endDate
 			? {
 					utilizationStart: filters.startDate,
 					utilizationEnd: filters.endDate,
 			  }
 			: undefined,
+	);
+	return useMemo(
+		() => utilizationWindow,
+		[filters.startDate, filters.endDate, utilizationWindow],
 	);
 };

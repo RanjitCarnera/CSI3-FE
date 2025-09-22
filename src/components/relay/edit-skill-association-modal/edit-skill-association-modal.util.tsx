@@ -1,9 +1,9 @@
 import { formatAssessmentValue } from "@components/person-details-button/parts/person-details-control/parts/skills-display/skills-display.util";
-import { type SkillDimensionTypeEnum } from "@relay/PeopleTable_PersonFragment.graphql";
 import {
 	type BinaryAssessmentValueInput,
 	type NumericalAssessmentValueInput,
 } from "@relay/skillAssessmentExecution_AnswerAssessmentMutation.graphql";
+import { type SkillDimensionTypeEnum } from "@relay/SkillsSelect_Query.graphql";
 
 export const enum SkillAssociationValueChangeStatus {
 	increase = "increase",

@@ -1,22 +1,22 @@
-import { Dropdown } from "primereact/dropdown";
 import { InputSwitch } from "primereact/inputswitch";
 import { InputText } from "primereact/inputtext";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { Panel, type PanelHeaderTemplateOptions } from "primereact/panel";
 import { TabPanel, TabView } from "primereact/tabview";
 import { classNames } from "primereact/utils";
-import React, { Suspense, useRef } from "react";
+import React, { Suspense, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useFragment } from "react-relay";
-import { ExecutivesSelect } from "@components/executives-select";
-import { AssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
-import { DivisionsSelect } from "@components/relay/DivisionsSelect";
-import { PeopleSelect } from "@components/relay/people-select";
-import { ProjectStagesSelect } from "@components/relay/ProjectStagesSelect";
-import { RegionsSelect } from "@components/relay/RegionsSelect";
+import { DebouncedPrDropdown } from "@components/debounced-pr-dropdown";
+import { DebouncedExecutivesSelect } from "@components/executives-select";
+import { DebouncedAssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
+import { DebouncedDivisionsSelect } from "@components/relay/DivisionsSelect";
+import { DebouncedPeopleSelect } from "@components/relay/people-select";
+import { DebouncedProjectStagesSelect } from "@components/relay/ProjectStagesSelect";
+import { DebouncedRegionsSelect } from "@components/relay/RegionsSelect";
 import { SkillCategorySelect } from "@components/relay/SkillCategorySelect";
-import { SkillsSelect } from "@components/relay/SkillsSelect";
-import { DefaultCalendarComponent } from "@components/ui/DefaultTextInput";
+import { DebouncedSkillsSelect } from "@components/relay/SkillsSelect";
+import { DebouncedDefaultCalendarComponent } from "@components/ui/DefaultTextInput";
 import { FilterTag } from "@components/ui/filter-tag";
 import { TkButton } from "@components/ui/TkButton";
 import {
@@ -26,9 +26,12 @@ import {
 	setShowPast,
 	type Sorting,
 	sortingOptions,
+	type Staffing,
 } from "@redux/ProjectViewSlice";
 import type { projectViewFiltersPart_QueryFragment$key } from "@relay/projectViewFiltersPart_QueryFragment.graphql";
 import { type projectViewFiltersPart_ScenarioFragment$key } from "@relay/projectViewFiltersPart_ScenarioFragment.graphql";
+import { type AssignmentStatus } from "@relay/staffViewPart_Query.graphql";
+import { FromToFilters } from "@screens/project-view/parts/from-to-filters";
 import { ProjectViewAssignmentTagsFilter } from "@screens/project-view/parts/project-view-filters-part/parts/assignment-tags-filter/assignment-tags-filter.component";
 import {
 	ProjectViewUtilizationStatusFilter,
@@ -46,6 +49,7 @@ export const ProjectViewFiltersPart = ({
 	scenarioFragment,
 	...props
 }: ProjectViewFiltersPartProps) => {
+	const [refetchKey, setRefetchKey] = useState(0);
 	const showPast = useSelector(selectShowPast);
 	const projectFilters = useSelector(selectScenarioProjectFilters);
 	const scenario = useFragment<projectViewFiltersPart_ScenarioFragment$key>(
@@ -117,7 +121,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"division-filter"}>Division</label>
 			<br />
-			<DivisionsSelect
+			<DebouncedDivisionsSelect
 				fieldName="division-filter"
 				fieldValue={projectFilters.filterByDivisions}
 				placeholder="Filter by division"
@@ -136,7 +140,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"region-filter"}>Region</label>
 			<br />
-			<RegionsSelect
+			<DebouncedRegionsSelect
 				placeholder={"Filter by regions"}
 				fieldName="region-filter"
 				fieldValue={projectFilters.filterByRegions}
@@ -156,7 +160,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"stage-filter"}>Stages</label>
 			<br />
-			<ProjectStagesSelect
+			<DebouncedProjectStagesSelect
 				placeholder={"Filter by stages"}
 				fieldName="stage-filter"
 				fieldValue={projectFilters.filterByStage}
@@ -176,7 +180,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"staffing-filter"}>Staffing</label>
 			<br />
-			<Dropdown
+			<DebouncedPrDropdown<Staffing>
 				name="staffing-filter"
 				placeholder="Either staffing"
 				options={[
@@ -189,7 +193,7 @@ export const ProjectViewFiltersPart = ({
 					dispatch(
 						setProjectViewProjectFilters({
 							...projectFilters,
-							filterByStaffing: e.value,
+							filterByStaffing: e,
 						}),
 					);
 				}}
@@ -200,7 +204,7 @@ export const ProjectViewFiltersPart = ({
 	const DateFromComponent = (
 		<div className="field mr-2">
 			<label htmlFor={"project-from-filter"}>Date from</label>
-			<DefaultCalendarComponent
+			<DebouncedDefaultCalendarComponent
 				fieldName="project-from-filter"
 				fieldValue={projectFilters.filterByDateFrom}
 				isValid={true}
@@ -219,7 +223,7 @@ export const ProjectViewFiltersPart = ({
 	const FreeUntilComponent = (
 		<div className="field mr-2">
 			<label htmlFor={"project-until-filter"}>Date until</label>
-			<DefaultCalendarComponent
+			<DebouncedDefaultCalendarComponent
 				fieldName="free-until-filter"
 				fieldValue={projectFilters.filterByDateTo}
 				isValid={true}
@@ -240,7 +244,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"staffing-filter"}>Sorting</label>
 			<br />
-			<Dropdown
+			<DebouncedPrDropdown<Sorting>
 				name="sorting-filter"
 				options={
 					[
@@ -260,7 +264,7 @@ export const ProjectViewFiltersPart = ({
 					dispatch(
 						setProjectViewProjectFilters({
 							...projectFilters,
-							sorting: e.value,
+							sorting: e,
 						}),
 					);
 				}}
@@ -288,7 +292,7 @@ export const ProjectViewFiltersPart = ({
 			<div>
 				<label htmlFor={"executive"}>Executives</label>
 			</div>
-			<ExecutivesSelect
+			<DebouncedExecutivesSelect
 				placeholder="Filter by executives"
 				fieldValue={projectFilters.filterByExecutives}
 				scenarioId={scenario.id}
@@ -308,7 +312,7 @@ export const ProjectViewFiltersPart = ({
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"assignment-status"}>Assignment Status</label>
 			<br />
-			<Dropdown
+			<DebouncedPrDropdown<AssignmentStatus>
 				name="assignment-status"
 				placeholder="Either"
 				options={[
@@ -321,7 +325,7 @@ export const ProjectViewFiltersPart = ({
 					dispatch(
 						setProjectViewProjectFilters({
 							...projectFilters,
-							filterByAssignmentStatus: e.value ?? undefined,
+							filterByAssignmentStatus: e ?? undefined,
 						}),
 					);
 				}}
@@ -334,7 +338,7 @@ export const ProjectViewFiltersPart = ({
 			<div>
 				<label htmlFor={"assignment-roles"}>Assignment roles</label>
 			</div>
-			<AssignmentRolesSelect
+			<DebouncedAssignmentRolesSelect
 				placeholder="Filter by assignment roles"
 				fieldValue={projectFilters.filterByAssignmentRoles}
 				updateField={(u) => {
@@ -353,7 +357,7 @@ export const ProjectViewFiltersPart = ({
 			<div>
 				<label htmlFor={"assignment-roles"}>Staff</label>
 			</div>
-			<PeopleSelect
+			<DebouncedPeopleSelect
 				placeholder="Filter by staff"
 				fieldValue={projectFilters.filterByStaff}
 				updateField={(u) => {
@@ -394,7 +398,7 @@ export const ProjectViewFiltersPart = ({
 			<label htmlFor={"skills-filter"}>Attributes</label>
 			<br />
 			<Suspense>
-				<SkillsSelect
+				<DebouncedSkillsSelect
 					filterBySkillCategoryRef={projectFilters.filterBySkillCategoryRef}
 					fieldName={"skills-filter"}
 					fieldValue={projectFilters.filterBySkills}
@@ -421,6 +425,7 @@ export const ProjectViewFiltersPart = ({
 				}
 				label="Reset Filters"
 				onClick={() => {
+					setRefetchKey((k) => k + 1);
 					dispatch(
 						setProjectViewProjectFilters({
 							filterByName: "",
@@ -485,6 +490,32 @@ export const ProjectViewFiltersPart = ({
 								{StaffComponent}
 								{SkillsCategoryFilterComponent}
 								{SkillsFilterComponent}
+								<div className="mr-2" style={{ minWidth: 500 }}>
+									<FromToFilters
+										key={"expiration-date-" + refetchKey}
+										initialState={{
+											startDate:
+												projectFilters.filterBySkillExpirationDate?.from,
+											endDate: projectFilters.filterBySkillExpirationDate?.to,
+										}}
+										needsBoth={false}
+										onChange={(newValue) => {
+											dispatch(
+												setProjectViewProjectFilters({
+													...projectFilters,
+													filterBySkillExpirationDate:
+														!!newValue.startDate || !!newValue.endDate
+															? {
+																	from: newValue.startDate,
+																	to: newValue.endDate,
+															  }
+															: undefined,
+												}),
+											);
+										}}
+										label={"Skill expiration date"}
+									/>
+								</div>
 								{AssignmentStatusComponent}
 								<ProjectViewAssignmentTagsFilter />
 								<ProjectViewUtilizationStatusFilter />

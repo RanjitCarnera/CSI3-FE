@@ -2,7 +2,6 @@ import { Tooltip } from "@thekeytechnology/framework-react-components";
 import { type FormikState } from "formik";
 import { classNames } from "primereact/utils";
 import React, { type ReactNode } from "react";
-
 import styled from "styled-components";
 import tw from "twin.macro";
 
@@ -95,6 +94,41 @@ export function ValidatedField<State, FieldType>({
 		</>
 	);
 
+	const errByName = formikConfig.errors[name];
+	const handleArray = (): string => {
+		const keys = Object.keys(errByName as Record<string, any>);
+		const all = keys.map((key) => {
+			const unknownObj = (errByName as Record<string, any>)[key];
+			if (Array.isArray(unknownObj)) {
+				return unknownObj.find((e) => typeof e === "string") ?? "";
+			}
+			return unknownObj;
+		});
+
+		const first = all.shift();
+		if (typeof first === "object") {
+			if (Array.isArray(first)) return first.shift() as string;
+			else {
+				const keysOnFirst = Object.keys(first);
+				const allOnFirst = keysOnFirst.map((key) => {
+					const unknownObj = (first as Record<string, any>)[key];
+					if (Array.isArray(unknownObj)) {
+						return unknownObj.find((e) => typeof e === "string") ?? "";
+					}
+					return unknownObj;
+				});
+				const firstOnFirst = allOnFirst.shift();
+				return typeof firstOnFirst === "string"
+					? firstOnFirst
+					: Array.isArray(firstOnFirst)
+					? firstOnFirst.find((e) => typeof e === "string") ?? ""
+					: "";
+			}
+		}
+		return typeof first === "string" ? first : "Unknown error occured";
+	};
+	// TODO: fix this
+	const showableError = Array.isArray(errByName) ? handleArray() : (errByName as string);
 	return (
 		<div className={`field flex flex-column ${className ?? ""}`}>
 			{label ? (
@@ -111,9 +145,7 @@ export function ValidatedField<State, FieldType>({
 
 			{iconClass ? <span className="p-input-icon-right">{FieldContent}</span> : FieldContent}
 
-			{hasError ? (
-				<small className="p-error">{(formikConfig.errors as any)[name]}</small>
-			) : null}
+			{hasError ? <small className="p-error">{showableError || ""}</small> : null}
 
 			{helpText ? <small>{helpText}</small> : null}
 		</div>

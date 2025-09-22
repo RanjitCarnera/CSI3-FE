@@ -1,9 +1,11 @@
 import { graphql } from "babel-plugin-relay/macro";
+import { Badge } from "primereact/badge";
 import { classNames } from "primereact/utils";
 import React, { Suspense } from "react";
 import { useSelector } from "react-redux";
 import { useFragment } from "react-relay";
 import styled from "styled-components";
+import { selectFetchedPeople } from "@redux/MapSlice";
 import { type rosterPart_FilterFragment$key } from "@relay/rosterPart_FilterFragment.graphql";
 import { type rosterPart_ScenarioFragment$key } from "@relay/rosterPart_ScenarioFragment.graphql";
 import { type rosterPart_StaffFragment$key } from "@relay/rosterPart_StaffFragment.graphql";
@@ -15,8 +17,9 @@ import { TkCard } from "../../../../components/ui/TkCard";
 import { selectIsPeopleFilterVisible } from "../../../../redux/ProjectViewSlice";
 
 const SCENARIO_FRAGMENT = graphql`
-	fragment rosterPart_ScenarioFragment on Scenario {
-		...RosterList_ScenarioFragment
+	fragment rosterPart_ScenarioFragment on Scenario
+	@argumentDefinitions(utilizationWindow: { type: "UtilizationWindowInput" }) {
+		...RosterList_ScenarioFragment @arguments(utilizationWindow: $utilizationWindow)
 		...rosterListActiveFilters_ScenarioFragment
 	}
 `;
@@ -106,6 +109,7 @@ export const RosterPart = ({
 	);
 	const staff = useFragment<rosterPart_StaffFragment$key>(STAFF_FRAGMENT, staffFragmentRef);
 
+	const fetchedPeople = useSelector(selectFetchedPeople);
 	return (
 		<RosterCard className={classNames("card-flat", className)}>
 			<div
@@ -116,7 +120,12 @@ export const RosterPart = ({
 				})}
 			>
 				<div className="flex align-items-center justify-content-between mb-2">
-					<Heading className="m-0">Roster</Heading>
+					<Heading
+						className="m-0"
+						style={{ alignItems: "center", display: "flex", gap: "0.5rem" }}
+					>
+						Roster <Badge severity={"info"} value={fetchedPeople.length} />
+					</Heading>
 					<RosterListFilters />
 				</div>
 				<RosterListActiveFilters className="mb-2" queryRef={query} scenarioRef={scenario} />

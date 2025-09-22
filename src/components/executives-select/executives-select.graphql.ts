@@ -15,6 +15,7 @@ export const EXECUTIVES_QUERY = graphql`
 				filterByName: $filterByName
 				alwaysIncludeIds: $alwaysIncludeIds
 				scenarioId: $scenarioId
+				activationStatus: true
 			) {
 				edges {
 					node {

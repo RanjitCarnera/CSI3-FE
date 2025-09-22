@@ -53,11 +53,7 @@ export const HarkinsTheme: TkComponentStyles = {
 	HorizontalElementSpacingWrapper,
 	Dialog: {
 		...DefaultStyledDialogComponents.Dialog,
-		DialogGlobal: createGlobalStyle`
-      .p-dialog-mask {
-        z-index: 901 !important;
-      }
-		`,
+		DialogGlobal: createGlobalStyle``,
 		DialogHeader: tw.div``,
 	},
 	FormDialog: {
@@ -86,11 +82,13 @@ export const HarkinsTheme: TkComponentStyles = {
 			position?: string;
 		}>`
 			z-index: ${TOOLTIP_ZINDEX} !important;
-      .p-tooltip-text {
-        background-color: ${textContrast.hexValue()};
-	      padding: 1.25rem;
-	      ${tooltipTypography.getCSS()};
-      }
+
+			.p-tooltip-text {
+				background-color: ${textContrast.hexValue()};
+				padding: 1.25rem;
+				${tooltipTypography.getCSS()};
+			}
+
 			.p-tooltip-arrow {
 				border-right-color: ${textContrast.hexValue()};
 				${(p) => {
@@ -102,7 +100,7 @@ export const HarkinsTheme: TkComponentStyles = {
 					}
 					return "";
 				}}
-			
+
 		`,
 	},
 	Button: {
@@ -118,15 +116,19 @@ export const HarkinsTheme: TkComponentStyles = {
 						.otherwise(() => "");
 				}}
 			}
+
 			&[inputvariant="subtle"] {
 				${TkButtonLinkStyles}
 			}
+
 			&[inputvariant="solid"] {
 				${TkButtonStyles}
 			}
+
 			&[inputvariant="error"] {
 				${TkButtonErrorStyles}
 			}
+
 			display: flex;
 			${(p) => (p.icon && p.label ? "gap: 0.25rem;" : "")}
 			align-items: center;
@@ -160,35 +162,35 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 	Dialog: {
 		...DefaultStyledDialogComponents.Dialog,
 		DialogGlobal: createGlobalStyle`
-          .p-dialog {
-            min-width: 32.5rem;
-          }
-          .p-dialog-mask {
-            z-index: 901 !important;
-          }
-          .p-dialog-header{
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
-	          padding: 0rem 2rem;
-	          padding-top: 2.5rem;
-	          padding-bottom: 2rem;
-	          
-	          & > div > div {
-	          	${pageTitleTypography.getCSS()};
-	          }
-          }
-          .p-dialog-content {
-            padding: 0rem 2rem;
-	          padding-bottom: 2rem;
-	          
-          }
-          .p-dialog-footer {
-            border-bottom-left-radius: 1rem;
-            border-bottom-right-radius: 1rem;
-	          padding: 1.5rem 2.5rem;
-            border-top: 2px solid ${borderColor.hexValue()};
-            box-shadow: 0px -6px 12px 0px rgba(161, 171, 187, 0.10);
-          }
+			.p-dialog {
+				min-width: 32.5rem;
+			}
+			
+			.p-dialog-header {
+				border-top-left-radius: 1rem;
+				border-top-right-radius: 1rem;
+				padding: 0rem 2rem;
+				padding-top: 2.5rem;
+				padding-bottom: 2rem;
+
+				& > div > div {
+					${pageTitleTypography.getCSS()};
+				}
+			}
+
+			.p-dialog-content {
+				padding: 0rem 2rem;
+				padding-bottom: 2rem;
+
+			}
+
+			.p-dialog-footer {
+				border-bottom-left-radius: 1rem;
+				border-bottom-right-radius: 1rem;
+				padding: 1.5rem 2.5rem;
+				border-top: 2px solid ${borderColor.hexValue()};
+				box-shadow: 0px -6px 12px 0px rgba(161, 171, 187, 0.10);
+			}
 		`,
 		DialogHeader: tw.div``,
 	},
@@ -218,13 +220,16 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 			// todo only if icon
 
 			${inputTypography.getCSS()};
-      ${(p) =>
-			p.hasIcon
-				? `&:focus-within {
+			${(p) =>
+				p.hasIcon
+					? `&:focus-within {
 				border: none;
 				box-shadow: none;
 			}`
-				: ""}};
+					: ""}
+		}
+
+		;
 		`,
 		TextWrapper: styled(DefaultStyledInputTextComponents.InputText.TextWrapper)`
 			display: flex;
@@ -242,6 +247,7 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 
 			//todo only if icon
 			padding-left: 1.25rem;
+
 			&:focus-within {
 				box-shadow: 0 0 0 0.2rem ${primary.hexValue()};
 			}
@@ -268,11 +274,13 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 				border: none;
 				color: ${textExtraSubtle.hexValue()};
 			}
+
 			&[inputvariant="subtle"] {
 				background-color: ${primary.withAlpha(0.05).rgbaValue()};
 				color: ${primary.hexValue()};
 				border: none;
 			}
+
 			&[inputvariant="error"] {
 				background-color: ${negative.rgbaValue()};
 				color: ${white.hexValue()};
@@ -306,11 +314,12 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 			position?: string;
 		}>`
 
-      .p-tooltip-text {
-        background-color: ${textContrast.hexValue()};
-	      padding: 1.25rem;
-	      ${tooltipTypography.getCSS()};
-      }
+			.p-tooltip-text {
+				background-color: ${textContrast.hexValue()};
+				padding: 1.25rem;
+				${tooltipTypography.getCSS()};
+			}
+
 			.p-tooltip-arrow {
 				border-right-color: ${textContrast.hexValue()};
 				${(p) => {
@@ -322,7 +331,7 @@ export const SkillAssessmentTheme: TkComponentStyles = {
 					}
 					return "";
 				}}
-			
+
 		`,
 	},
 };

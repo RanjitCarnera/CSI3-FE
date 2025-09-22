@@ -3,8 +3,6 @@ import { graphql } from "babel-plugin-relay/macro";
 export const SCENARIO_FRAGMENT = graphql`
 	fragment projectCard_ScenarioFragment on Scenario {
 		id
-		...assignmentsInProject_ScenarioFragment
-
 		budget {
 			projectBudgets {
 				projectRef
@@ -13,6 +11,8 @@ export const SCENARIO_FRAGMENT = graphql`
 				utilizedCost
 			}
 		}
+		...assignmentsInProject_ScenarioFragment
+		...CheckScenarioPermissions_ScenarioFragment
 	}
 `;
 

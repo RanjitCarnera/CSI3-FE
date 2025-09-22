@@ -26,6 +26,7 @@ export const convertMarkerInputsToCUCInput = (
 							SimpleMarker: {
 								percentageInTime: getPercentage(marker.percentageTime),
 								percentageOfWeighting: getPercentage(marker.percentageWeight),
+								nameOpt: marker.name,
 								kind: "SimpleMarker",
 							},
 						}))

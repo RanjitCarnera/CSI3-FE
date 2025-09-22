@@ -18,6 +18,7 @@ const PEOPLE_QUERY = graphql`
 				excludeIds: $excludeIds
 				filterByName: $filterByName
 				alwaysIncludeIds: $alwaysIncludeIds
+				activationStatus: true
 			) {
 				edges {
 					node {
@@ -67,7 +68,7 @@ export const PersonSelect = (fieldConfig: ValidatedFieldConfig<string>) => {
 				);
 			});
 		// eslint-disable-next-line
-    }, [])
+	}, []);
 
 	return (
 		<Dropdown

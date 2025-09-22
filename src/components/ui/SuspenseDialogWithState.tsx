@@ -4,7 +4,7 @@ import { TkButtonLink } from "./TkButtonLink";
 import { TkDialog } from "./TkDialog";
 
 interface OwnProps<FormState, Ext extends {} = {}> {
-	title: string;
+	title: string | ReactNode;
 	isVisible: boolean;
 	onHide: () => void;
 	affirmativeText?: string;
@@ -27,7 +27,7 @@ export function SuspenseDialogWithState<FormState, Ext extends {} = {}>({
 	return (
 		<TkDialog
 			dismissableMask={true}
-			header={<h1>{title}</h1>}
+			header={typeof title === "string" ? <h1>{title}</h1> : title}
 			visible={isVisible}
 			onHide={onHide}
 			footer={

@@ -9,6 +9,7 @@ import {
 	type tagsSelect_TagInlineFragment$data,
 	type tagsSelect_TagInlineFragment$key,
 } from "@relay/tagsSelect_TagInlineFragment.graphql";
+import { withDebounce } from "@utils/with-debounce";
 
 export const TagsSelect = (fieldConfig: ValidatedFieldConfig<string[]>) => {
 	const environment = useRelayEnvironment();
@@ -60,3 +61,5 @@ export const TagsSelect = (fieldConfig: ValidatedFieldConfig<string[]>) => {
 		/>
 	);
 };
+
+export const DebouncedTagsSelect = withDebounce(TagsSelect);

@@ -22,6 +22,7 @@ import {
 	calculatePointsInCategory,
 	skillAssociationToFormattedJsx,
 } from "@components/person-details-button/parts/person-details-control/parts/skills-display/skills-display.util";
+import { formatDate } from "@components/ui/DateTimeDisplay";
 import { type skillsDisplay_PersonFragment$key } from "@relay/skillsDisplay_PersonFragment.graphql";
 import { type skillsDisplay_SkillAssociationInlineFragment$key } from "@relay/skillsDisplay_SkillAssociationInlineFragment.graphql";
 import { textContrast, textDefault } from "@screens/skill-assessment/parts/mock/color";
@@ -116,6 +117,11 @@ export const SkillsDisplay = ({ personFragmentRef }: SkillsDisplayProps) => {
 											{formattedValue}
 											<HeaderSpan color={textDefault}>
 												{skill.data.skill?.name}
+												{skill.data?.expirationDate
+													? " (exp - " +
+													  formatDate(skill.data?.expirationDate) +
+													  ")"
+													: ""}
 											</HeaderSpan>
 										</SkillWrapper>
 									);

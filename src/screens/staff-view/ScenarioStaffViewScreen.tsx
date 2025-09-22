@@ -2,7 +2,14 @@ import { Button } from "@thekeytechnology/framework-react-components";
 import { graphql } from "babel-plugin-relay/macro";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { Panel } from "primereact/panel";
-import React, { Suspense, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import React, {
+	Suspense,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,6 +17,7 @@ import { useFragment, useLazyLoadQuery } from "react-relay";
 import { useMatch } from "react-router-dom";
 import { createGlobalStyle } from "styled-components";
 import { LoadPursuitProjectsFromRandDwhButton } from "@components/load-pursuit-projects-from-rand-dwh-button";
+import { CheckScenarioPermissions } from "@components/relay/CheckScenarioPermissions";
 import { DashboardHeader } from "@components/relay/DashboardHeader";
 import { SyncWithRandPreconDwhButton } from "@components/sync-with-rand-precon-dwh-button";
 import { BaseScreen } from "@components/ui/base-screen";
@@ -22,12 +30,13 @@ import {
 	initializeFromPreferredView,
 	selectShouldSeeUseTagColorButton,
 	selectShouldUseTagColor,
+	selectShowWeights,
+	selectStaffViewFilters,
 	setShouldUseTagColor,
 } from "@redux/StaffViewSlice";
 import { type ScenarioStaffViewScreen_Query } from "@relay/ScenarioStaffViewScreen_Query.graphql";
-import {
-	type ScenarioStaffViewScreen_ScenarioFragment$key,
-} from "@relay/ScenarioStaffViewScreen_ScenarioFragment.graphql";
+import { type ScenarioStaffViewScreen_ScenarioFragment$key } from "@relay/ScenarioStaffViewScreen_ScenarioFragment.graphql";
+import { IntervalWeightsButton } from "@screens/staff-view/parts/interval-weights-button/interval-weights-button.component";
 import { StaffViewFiltersPart } from "@screens/staff-view/parts/staff-view-filters-part";
 import { StaffViewPart } from "@screens/staff-view/parts/staff-view-part";
 import { IntervalSizeButton } from "./parts/IntervalSizeButton";
@@ -73,6 +82,7 @@ const SCENARIO_QUERY = graphql`
 		...updateAssignmentsFromDynamicsButton_ScenarioFragment
 		...syncWithRandPreconDwhButton_ScenarioFragment
 		...loadPursuitProjectsFromRandDwhButton_ScenarioFragment
+		...CheckScenarioPermissions_ScenarioFragment
 	}
 `;
 
@@ -137,7 +147,10 @@ export const ScenarioStaffViewScreen = () => {
 			setIsPrintViewVisible(false);
 		}, 1000);
 	};
-	const shouldUseTagColor = useSelector(selectShouldUseTagColor);
+	const shouldShowWeights = useSelector(selectShowWeights);
+
+	const filters = useSelector(selectStaffViewFilters);
+	const intervalType = filters.intervalType || "Weeks";
 
 	return scenario ? (
 		<BaseScreen
@@ -152,7 +165,21 @@ export const ScenarioStaffViewScreen = () => {
 						<div className={"ml-auto mr-3"}>
 							<div className="flex flex-row gap-2">
 								<UseTagColorButton />
-
+								{/* <Button */}
+								{/* 	content={{ */}
+								{/* 		label: "Show weights", */}
+								{/* 		iconPosition: "left", */}
+								{/* 		icon: shouldShowWeights */}
+								{/* 			? "pi pi-circle-fill" */}
+								{/* 			: "pi pi-circle", */}
+								{/* 	}} */}
+								{/* 	tooltip={{ */}
+								{/* 		content: `${shouldShowWeights ? "Hide" : "Show"} weights.`, */}
+								{/* 	}} */}
+								{/* 	onClick={() => { */}
+								{/* 		dispatch(setShowWeights(!shouldShowWeights)); */}
+								{/* 	}} */}
+								{/* /> */}
 								<Button
 									content={{
 										label: "Views",
@@ -184,6 +211,13 @@ export const ScenarioStaffViewScreen = () => {
 								</Panel>
 							</OverlayPanel>
 						</div>
+						<CheckScenarioPermissions
+							requiredPermission={"UserInAccountPermission_Scenario_Edit"}
+							scenarioFragmentRef={scenario}
+						>
+							<IntervalWeightsButton scenarioId={scenario.id} />
+						</CheckScenarioPermissions>
+						<div className={"mr-3"} />
 						<StaffViewSortSelect className="mr-3" />
 						<IntervalSizeButton className="mr-3" />
 						<UpdateAssignmentsFromDynamicsButton scenarioFragmentRef={scenario} />
@@ -208,9 +242,9 @@ export const ScenarioStaffViewScreen = () => {
 };
 // TODO
 const GlobalStyles = createGlobalStyle`
-  .p-overlaypanel {
-    z-index: 900 !important; /* Your desired zIndex */
-  }
+	.p-overlaypanel {
+		z-index: 900 !important; /* Your desired zIndex */
+	}
 `;
 
 const UseTagColorButton = () => {

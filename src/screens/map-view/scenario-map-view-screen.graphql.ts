@@ -23,6 +23,7 @@ export const QUERY = graphql`
 		node(id: $id) {
 			... on Scenario {
 				...scenarioMapViewScreen_ScenarioFragment
+					@arguments(utilizationWindow: $utilizationWindow)
 			}
 		}
 		...rosterPart_StaffFragment
@@ -50,10 +51,11 @@ export const QUERY = graphql`
 	}
 `;
 export const SCENARIO_QUERY = graphql`
-	fragment scenarioMapViewScreen_ScenarioFragment on Scenario {
+	fragment scenarioMapViewScreen_ScenarioFragment on Scenario
+	@argumentDefinitions(utilizationWindow: { type: "UtilizationWindowInput" }) {
 		id
 		...ProjectMapPart_ScenarioFragment
-		...rosterPart_ScenarioFragment
+		...rosterPart_ScenarioFragment @arguments(utilizationWindow: $utilizationWindow)
 		...DashboardHeader_ScenarioFragment
 		projects {
 			edges {

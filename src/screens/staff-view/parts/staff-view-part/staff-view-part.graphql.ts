@@ -57,6 +57,11 @@ export const SCENARIO_FRAGMENT = graphql`
 				...IntervalHeaderComponent_IntervalFragment
 				...allocationBarProvider_IntervalFragment
 			}
+			weightsForIntervals {
+				weight
+				intervalIndex
+				assignmentRef
+			}
 			allocationGroups {
 				groupType
 				allocations {

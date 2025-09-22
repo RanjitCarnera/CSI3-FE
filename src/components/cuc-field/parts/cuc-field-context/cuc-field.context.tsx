@@ -11,6 +11,7 @@ import {
 	useState,
 } from "react";
 import type { ChartJSOrUndefined } from "react-chartjs-2/dist/types";
+import { useSelector } from "react-redux";
 import { useFragment, useMutation } from "react-relay";
 import { toast } from "react-toastify";
 import {
@@ -37,7 +38,9 @@ import {
 	createInitialData,
 	extractDataFromChartRef,
 	getPrevIndex,
+	moveOrReplaceEntityInArr,
 } from "@components/cuc-field/parts/cuc-field-context/cuc-field-context.utils";
+import { selectHasPermissions } from "@redux/CurrentUserSlice";
 import { type cucFieldContext_AssignmentFragment$key } from "@relay/cucFieldContext_AssignmentFragment.graphql";
 import { type cucFieldContext_GetPercentageForDateOnProjectMutation } from "@relay/cucFieldContext_GetPercentageForDateOnProjectMutation.graphql";
 import { type cucFieldContext_ProjectFragment$key } from "@relay/cucFieldContext_ProjectFragment.graphql";
@@ -147,8 +150,8 @@ export const CucFieldContextProvider = ({
 		if (!selectedMarker) return true;
 
 		const isStartOrFinish =
-			(selectedMarker.kind === "CustomMarker" && selectedMarker.name === "Start") ||
-			selectedMarker.name === "Finish";
+			selectedMarker.kind === "CustomMarker" &&
+			(selectedMarker.name === "Start" || selectedMarker.name === "Finish");
 		return !isStartOrFinish;
 	}, [clickedPointIndex, chartRef]);
 
@@ -196,7 +199,6 @@ export const CucFieldContextProvider = ({
 				...baseOptions.scales,
 				x: {
 					...baseOptions.scales?.x,
-					dragData: layer !== CUCLayer.Layer2,
 					min: scaleX[0],
 					max: scaleX[1],
 					ticks: {
@@ -251,10 +253,6 @@ export const CucFieldContextProvider = ({
 						value: ChartDataValue,
 					) {
 						if (value?.name === "Start" || value?.name === "Finish") {
-							if (layer === CUCLayer.Layer2) {
-								alert("Cannot drag start or finish dates.");
-								return false;
-							}
 							return true;
 						}
 					},
@@ -266,12 +264,18 @@ export const CucFieldContextProvider = ({
 					) {
 						const data = extractDataFromChartRef(chartRef);
 						if (!data) return;
-						if (
-							value.kind === "CustomMarker" ||
-							value.kind === "MilestoneTemplateMarker" ||
-							value.kind === "MilestoneMarker"
-						) {
-							value.x = data[index].x;
+						if (layer === CUCLayer.Layer2) {
+							if (value.kind === "MilestoneTemplateMarker") {
+								value.x = data[index].x;
+							}
+						} else {
+							if (
+								value.kind === "CustomMarker" ||
+								value.kind === "MilestoneTemplateMarker" ||
+								value.kind === "MilestoneMarker"
+							) {
+								value.x = data[index].x;
+							}
 						}
 					},
 					onDragEnd: function (
@@ -299,13 +303,17 @@ export const CucFieldContextProvider = ({
 		[layer, momentStartDate, momentEndDate, scaleX, scaleY, handleUpdateField],
 	);
 
+	const hasPermissions = useSelector(selectHasPermissions);
+	const hasPermission = hasPermissions(["UserInAccountPermission_MilestoneTemplate_Read"]);
+
 	const contextMenuItems: MenuItem[] = [
 		{
 			label: "Add custom point",
 			icon: "pi pi-plus",
-			visible: ([CUCLayer.Layer3, CUCLayer.Layer1] as Array<keyof typeof CUCLayer>).includes(
-				layer,
-			),
+			visible:
+				([CUCLayer.Layer3, CUCLayer.Layer1] as Array<keyof typeof CUCLayer>).includes(
+					layer,
+				) && isNotStartOrFinish,
 			command(_: MenuItemCommandEvent) {
 				const chart = chartRef.current;
 				const canvas = chart?.canvas;
@@ -361,9 +369,103 @@ export const CucFieldContextProvider = ({
 			},
 		},
 		{
+			label: "Add custom point",
+			icon: "pi pi-plus",
+			visible: ([CUCLayer.Layer2] as Array<keyof typeof CUCLayer>).includes(layer),
+			command(_: MenuItemCommandEvent) {
+				const chart = chartRef.current;
+				const canvas = chart?.canvas;
+				if (!canvas || !chart) return;
+
+				const rect = canvas.getBoundingClientRect();
+
+				const x = mouseCoords[0] - rect.left;
+				const y = mouseCoords[1] - rect.top;
+
+				const xScale = chart.scales.x;
+				const yScale = chart.scales.y;
+
+				if (!xScale || !yScale) return;
+
+				const dataX = xScale.getValueForPixel(x) ?? 0;
+				const dataY = yScale.getValueForPixel(y) ?? 0;
+
+				const dataset = chart.data.datasets[0];
+				const data = dataset.data as ChartDataValue[];
+
+				let insertIndex = 0;
+
+				const xs = data.map((e) => e.x);
+				const minX = xs.min() ?? 0;
+				const maxX = xs.max() ?? 0;
+				if (dataX < minX) {
+					insertIndex = 0;
+				} else if (dataX > maxX) {
+					insertIndex = data.length;
+				} else {
+					for (let i = 0; i < data.length - 1; i++) {
+						const x1 = data[i].x;
+						const x2 = data[i + 1].x;
+						if (x1 <= dataX && dataX <= x2) {
+							insertIndex = i + 1;
+							break;
+						}
+					}
+				}
+
+				setCurrentModalKind(CurrentModalKind.createNewFromName);
+				setOnSubmit(() => (newName: string) => {
+					if (!newName.length) {
+						setCurrentModalKind(null);
+						return;
+					}
+
+					data.splice(insertIndex, 0, {
+						kind: "SimpleMarker",
+						x: dataX,
+						y: dataY,
+						percentageWeight: dataY,
+						percentageTime: dataX,
+						name: newName.length ? newName : null,
+						milestoneTemplateOpt: null,
+						milestoneOpt: null,
+					});
+					handleUpdateField(data);
+					setCurrentModalKind(null);
+				});
+			},
+		},
+		{
+			label: "Edit name",
+			visible:
+				layer === CUCLayer.Layer2 &&
+				(selectedChartDataValueOpt
+					? ["SimpleMarker"].includes(selectedChartDataValueOpt.kind)
+					: false),
+			icon: "pi pi-pencil",
+			command(event: MenuItemCommandEvent) {
+				const chart = chartRef.current;
+				const canvas = chart?.canvas;
+				if (!canvas || !chart) return;
+
+				setCurrentModalKind(CurrentModalKind.editName);
+				setOnSubmit(() => (newName: string | undefined) => {
+					const data = extractDataFromChartRef(chartRef);
+					if (!data) return;
+
+					if (Number.isNaN(clickedPointIndex)) return;
+					const entry = data[clickedPointIndex as number];
+					entry.name = newName;
+
+					handleUpdateField(data);
+					setCurrentModalKind(null);
+				});
+			},
+		},
+		{
 			label: "Add from milestone template",
 			icon: "pi pi-plus",
-			visible: layer === CUCLayer.Layer2,
+			visible: layer === CUCLayer.Layer2 && hasPermission,
 			command(_: MenuItemCommandEvent) {
 				const chart = chartRef.current;
 				const canvas = chart?.canvas;
@@ -419,7 +521,8 @@ export const CucFieldContextProvider = ({
 						opt.data.timeInPercent * 100,
 					);
 
-					const startIndex = layer === CUCLayer.Layer1 ? prevIndex + 1 : insertIndex;
+					const startIndex = prevIndex + 1;
+
 					data.splice(startIndex, 0, {
 						kind: "MilestoneTemplateMarker",
 						x: dataX,
@@ -439,7 +542,7 @@ export const CucFieldContextProvider = ({
 		{
 			label: "Set weight",
 			icon: "pi pi-chart-bar",
-			visible: isNotStartOrFinish && clickedPointIndex !== null,
+			visible: clickedPointIndex !== null,
 			command(event: MenuItemCommandEvent) {
 				if (clickedPointIndex === null) return;
 
@@ -454,21 +557,31 @@ export const CucFieldContextProvider = ({
 			label: "Set time",
 			icon: "pi pi-clock",
 			visible:
-				isNotStartOrFinish &&
-				([CUCLayer.Layer3, CUCLayer.Layer2] as Array<keyof typeof CUCLayer>).includes(
-					layer,
-				) &&
+				((layer === CUCLayer.Layer3 && isNotStartOrFinish) ||
+					layer === CUCLayer.Layer2 ||
+					(layer === CUCLayer.Layer1 && isNotStartOrFinish)) &&
 				clickedPointIndex !== null &&
-				selectedChartDataValueOpt
-					? selectedChartDataValueOpt?.kind !== "MilestoneMarker"
-					: true,
+				(selectedChartDataValueOpt
+					? !["MilestoneMarker", "MilestoneTemplateMarker"]
+							.concat(layer === CUCLayer.Layer2 ? [] : ["CustomMarker"])
+							.includes(selectedChartDataValueOpt?.kind ?? "")
+					: true),
 			command(_: MenuItemCommandEvent) {
 				if (clickedPointIndex === null) return;
 
 				setCurrentModalKind(CurrentModalKind.editTime);
 				setOnSubmit(() => (newTime: number) => {
-					initialData.datasets[0].data[clickedPointIndex].percentageTime = newTime;
-					handleUpdateField(initialData.datasets[0].data);
+					const data = extractDataFromChartRef(chartRef);
+					if (!data) return;
+
+					const prevIndex = getPrevIndex([...data], (e) => e.percentageTime, newTime);
+					const startIndex = prevIndex + 1;
+					const newData = moveOrReplaceEntityInArr(data, clickedPointIndex, startIndex, {
+						...initialData.datasets[0].data[clickedPointIndex],
+						percentageTime: newTime,
+					});
+
+					handleUpdateField(newData);
 				});
 			},
 		},
@@ -496,7 +609,10 @@ export const CucFieldContextProvider = ({
 				!!endDate &&
 				layer === CUCLayer.Layer3 &&
 				!!assignmentFragmentOpt &&
-				!!projectMilestoneOptions.length,
+				!!projectMilestoneOptions.length &&
+				(selectedChartDataValueOpt
+					? selectedChartDataValueOpt?.kind !== "MilestoneMarker"
+					: true),
 			command(event: MenuItemCommandEvent) {
 				const chart = chartRef.current;
 				const canvas = chart?.canvas;
@@ -626,6 +742,7 @@ export const CucFieldContextProvider = ({
 					if (!milestoneOpt) return toast.error("Invalid project milestone selected");
 
 					if (!projectFragmentOpt) return;
+
 					commitGetPercentageForDate({
 						variables: {
 							input: {
@@ -655,24 +772,39 @@ export const CucFieldContextProvider = ({
 									"Could not sync with milestone marker. This would lie far outside the current bounds.",
 								);
 							} else {
-								if (!clickedPointIndex) return;
+								if (Number.isNaN(clickedPointIndex) || clickedPointIndex === null)
+									return;
+
 								const point = data[clickedPointIndex];
 								if (!point) return;
 
-								point.kind = "MilestoneMarker";
-								point.milestoneOpt = {
-									id,
-									name: milestoneOpt.data.name,
-									date: milestoneOpt.data.date,
-									assignmentRef: assignmentFragmentOpt!.id,
-								};
-								point.x = response.percentage! * 100;
-								point.percentageTime = response.percentage! * 100;
-								point.name = milestoneOpt.data.name;
-								point.milestoneTemplateOpt = null;
-
-								data[clickedPointIndex] = point;
-								handleUpdateField(data);
+								const prevIndex = getPrevIndex(
+									[...data],
+									(e) => e.percentageTime,
+									response.percentage! * 100,
+								);
+								const startIndex = prevIndex + 1;
+								const newData = moveOrReplaceEntityInArr(
+									data,
+									clickedPointIndex,
+									startIndex,
+									{
+										kind: "MilestoneMarker",
+										milestoneOpt: {
+											id,
+											name: milestoneOpt.data.name,
+											date: milestoneOpt.data.date,
+											assignmentRef: assignmentFragmentOpt!.id,
+										},
+										x: response.percentage! * 100,
+										percentageTime: response.percentage! * 100,
+										name: milestoneOpt.data.name,
+										milestoneTemplateOpt: null,
+										percentageWeight: point.percentageWeight,
+										y: point.y,
+									},
+								);
+								handleUpdateField(newData);
 							}
 						},
 					});

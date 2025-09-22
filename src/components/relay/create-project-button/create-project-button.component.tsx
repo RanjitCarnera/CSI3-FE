@@ -59,7 +59,7 @@ export const CreateProjectButton = ({ connectionId, className }: CreateProjectBu
 												creationData:
 													values.milestones?.map((e) => ({
 														name: e.name,
-														date: e.name,
+														date: e.date,
 													})) ?? [],
 											},
 										},

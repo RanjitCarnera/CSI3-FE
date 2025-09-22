@@ -35,6 +35,10 @@ const EDIT_MUTATION = graphql`
 				update {
 					scenario {
 						...AssignmentCard_ScenarioFragment
+
+						utilizationWithStandAndEndDate {
+							...personCard_ScenarioUtilizationFragment
+						}
 					}
 				}
 			}
@@ -96,6 +100,7 @@ export const CUC_INLINE_FRAGMENT = graphql`
 			percentageOfWeighting
 			... on SimpleMarker {
 				percentageInTime
+				name
 			}
 			... on CustomMarker {
 				percentageInTime

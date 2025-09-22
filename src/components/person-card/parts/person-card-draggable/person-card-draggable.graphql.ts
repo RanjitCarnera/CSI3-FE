@@ -1,9 +1,10 @@
 import { graphql } from "babel-plugin-relay/macro";
 
 export const SCENARIO_FRAGMENT = graphql`
-	fragment personCardDraggable_ScenarioFragment on Scenario {
+	fragment personCardDraggable_ScenarioFragment on Scenario
+	@argumentDefinitions(utilizationWindow: { type: "UtilizationWindowInput" }) {
 		id
-		utilization {
+		utilizationWithStandAndEndDate(utilizationWindow: $utilizationWindow) {
 			personUtilizations {
 				personRef
 				status

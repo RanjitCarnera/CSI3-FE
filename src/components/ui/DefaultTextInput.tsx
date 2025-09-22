@@ -16,6 +16,7 @@ import tw from "twin.macro";
 import { TkButton } from "@components/ui/TkButton";
 import { TkButtonLink } from "@components/ui/TkButtonLink";
 import { selectHasPermissions } from "@redux/CurrentUserSlice";
+import { withDebounce } from "@utils/with-debounce";
 import { type ValidatedFieldConfig } from "./ValidatedField";
 
 export const DefaultPhoneNumberField = ({
@@ -36,6 +37,7 @@ export const DefaultPhoneNumberField = ({
 		/>
 	);
 };
+
 export function DefaultTextFieldComponent({
 	fieldName,
 	fieldValue,
@@ -90,12 +92,11 @@ export function DefaultPercentageFieldComponent({
 			max={max}
 			mode={mode}
 			locale={locale}
-			minFractionDigits={3}
-			maxFractionDigits={3}
+			minFractionDigits={0}
+			maxFractionDigits={0}
 			placeholder={placeholder}
 			className={classNames({ "p-invalid": !isValid })}
 			onChange={handleOnChange}
-			onValueChange={handleOnChange}
 			{...props}
 		/>
 	);
@@ -113,7 +114,10 @@ export function DefaultOTPFieldComponent({
 	length,
 	onComplete,
 	...props
-}: ValidatedFieldConfig<string> & { length: number; onComplete?: (otp: string) => void }) {
+}: ValidatedFieldConfig<string> & {
+	length: number;
+	onComplete?: (otp: string) => void;
+}) {
 	const inputRef = useRef<HTMLInputElement[]>(Array(length).fill(null));
 	const [OTP, setOTP] = useState<string[]>(Array(length).fill(""));
 
@@ -236,6 +240,8 @@ export const DefaultSalaryComponent = ({
 	);
 };
 
+export const DebouncedDefaultSalaryComponent = withDebounce(DefaultSalaryComponent);
+
 export function DefaultTextAreaComponent({
 	fieldName,
 	fieldValue,
@@ -336,6 +342,8 @@ export function DefaultCalendarComponent({
 		</div>
 	);
 }
+
+export const DebouncedDefaultCalendarComponent = withDebounce(DefaultCalendarComponent);
 
 export function DefaultEditorComponent({
 	fieldName,

@@ -73,12 +73,14 @@ export const createInitialData = (
 			borderColor: (ctx) => {
 				const value = ctx.raw as ChartDataValue | undefined;
 				if (!value) return borderColor;
-				return value.kind === "MilestoneMarker" ? HIGHLIGHT_BORDER_COLOR : borderColor;
+				return value.kind === "MilestoneMarker" || value.kind === "MilestoneTemplateMarker"
+					? HIGHLIGHT_BORDER_COLOR
+					: borderColor;
 			},
 			backgroundColor: (ctx) => {
 				const value = ctx.raw as ChartDataValue | undefined;
 				if (!value) return backgroundColor;
-				return value.kind === "MilestoneMarker"
+				return value.kind === "MilestoneMarker" || value.kind === "MilestoneTemplateMarker"
 					? HIGHLIGHT_BACKGROUND_COLOR
 					: backgroundColor;
 			},
@@ -89,3 +91,25 @@ export const createInitialData = (
 		},
 	],
 });
+
+/**
+ * Useful when importing or syncing milestones to keep order of markers chronologically intact.
+ * @param array
+ * @param x
+ * @param y
+ * @param newItem
+ */
+export function moveOrReplaceEntityInArr<T>(array: T[], x: number, y: number, newItem: T): T[] {
+	const result = [...array];
+
+	if (x === y) {
+		result[x] = newItem;
+	} else {
+		result.splice(x, 1);
+		const insertIndex = x < y ? y - 1 : y;
+
+		result.splice(insertIndex, 0, newItem);
+	}
+
+	return result;
+}

@@ -2,7 +2,11 @@ import { createSelector, createSlice, type PayloadAction } from "@reduxjs/toolki
 import { type PreferredViewType } from "@relay/preferredViewTypeForm_CurrentUser.graphql";
 import { type SkillFilter } from "@relay/RosterList_StaffRefetch.graphql";
 import { type ViewType } from "@relay/ScenarioProjectViewScreen_Query.graphql";
-import { type AssignmentStatus, type UtilizationStatus } from "@relay/staffViewPart_Query.graphql";
+import {
+	type AssignmentStatus,
+	type LocalDateRangeFilterInput,
+	type UtilizationStatus,
+} from "@relay/staffViewPart_Query.graphql";
 import { deepCompare } from "@utils/deep-compare";
 import { initializeFromUrl, updateUrl } from "@utils/url-utils";
 import { type ReduxState } from "../Store";
@@ -36,6 +40,7 @@ export interface ScenarioPeopleFilters {
 	filterByDivisions?: string[];
 	startDate?: string;
 	endDate?: string;
+	filterBySkillExpirationDate?: LocalDateRangeFilterInput;
 }
 
 export type Staffing = "Fully staffed" | "Not Fully Staffed";
@@ -72,6 +77,7 @@ export interface ScenarioProjectFilters {
 	filterByAssignmentRoles?: string[];
 	filterByStaff?: string[];
 	filterBySkills?: SkillFilter[];
+	filterBySkillExpirationDate?: LocalDateRangeFilterInput;
 	filterBySkillCategoryRef?: string;
 	filterByAssignmentStatus?: AssignmentStatus;
 	filterByAssignmentTags?: string[];

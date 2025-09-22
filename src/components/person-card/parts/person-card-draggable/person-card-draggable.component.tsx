@@ -45,7 +45,7 @@ export const DraggablePersonCard = ({
 			scenarioFragmentRef={scenario}
 			personFragmentRef={person}
 			hideTotalVolume={hideTotalVolume}
-			scenarioUtilizationRef={scenario.utilization}
+			scenarioUtilizationRef={scenario.utilizationWithStandAndEndDate}
 			ref={
 				{
 					outerRef: dragPreview,

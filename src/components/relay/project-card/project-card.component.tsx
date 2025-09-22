@@ -14,6 +14,7 @@ import {
 	type ContextMenuOptionOverride,
 } from "@components/context-menu/context-menu.types";
 
+import { CheckScenarioPermissions } from "@components/relay/CheckScenarioPermissions";
 import { AssignmentsInProject } from "@components/relay/project-card/parts/assignments-in-project/assignments-in-project.component";
 import { EditProjectInScenarioButton } from "@components/relay/project-card/parts/edit-project-in-scenario-button";
 import { RemoveProjectFromScenarioButton } from "@components/relay/project-card/parts/remove-project-from-scenario-button";
@@ -108,6 +109,7 @@ export const ProjectCard = React.memo(
 		const navigate = useNavigate();
 		const hasPermissions = useSelector(selectHasPermissions);
 		const hasMapsReadPermissions = hasPermissions(["UserInAccountPermission_Maps_Read"]);
+		const hasEditScenarioPermission = hasPermissions(["UserInAccountPermission_Scenario_Edit"]);
 
 		const isPast = useMemo(
 			() => moment(projectInScenario.project.endDate).isSameOrBefore(moment.now()),
@@ -174,9 +176,14 @@ export const ProjectCard = React.memo(
 						{
 							kind: ContextMenuKind.override,
 							node: (
-								<SyncAssignmentsCucButton
-									projectInScenarioFragmentRef={projectInScenario}
-								/>
+								<CheckScenarioPermissions
+									requiredPermission={"UserInAccountPermission_Scenario_Edit"}
+									scenarioFragmentRef={scenario}
+								>
+									<SyncAssignmentsCucButton
+										projectInScenarioFragmentRef={projectInScenario}
+									/>
+								</CheckScenarioPermissions>
 							),
 						} as ContextMenuOptionOverride,
 				  ]

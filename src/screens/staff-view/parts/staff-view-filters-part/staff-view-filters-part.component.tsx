@@ -1,24 +1,25 @@
-import { Dropdown } from "primereact/dropdown";
-import { InputNumber } from "primereact/inputnumber";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { Panel, type PanelHeaderTemplateOptions } from "primereact/panel";
 import { TabPanel, TabView } from "primereact/tabview";
 import { classNames } from "primereact/utils";
-import React, { Fragment, type HTMLAttributes, Suspense, useRef } from "react";
+import React, { Fragment, type HTMLAttributes, Suspense, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useFragment } from "react-relay";
-import { ExecutivesSelect } from "@components/executives-select";
-import { ProjectsSelect } from "@components/projects-select/projects-select.component";
-import { AssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
-import { DivisionsSelect } from "@components/relay/DivisionsSelect";
-import { PeopleSelect } from "@components/relay/people-select";
-import { ProjectStagesSelect } from "@components/relay/ProjectStagesSelect";
-import { RegionsSelect } from "@components/relay/RegionsSelect";
+import { DebouncedPrDropdown } from "@components/debounced-pr-dropdown";
+import { DebouncedPrInputNumber } from "@components/debounced-pr-input-number";
+import { DebouncedExecutivesSelect } from "@components/executives-select";
+import { DebouncedProjectsSelect } from "@components/projects-select/projects-select.component";
+import { DebouncedAssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
+import { DebouncedDivisionsSelect } from "@components/relay/DivisionsSelect";
+import { DebouncedPeopleSelect } from "@components/relay/people-select";
+import { DebouncedProjectStagesSelect } from "@components/relay/ProjectStagesSelect";
+import { DebouncedRegionsSelect } from "@components/relay/RegionsSelect";
 import { formatCurrency } from "@components/ui/CurrencyDisplay";
 import { FilterTag } from "@components/ui/filter-tag";
 import { TkButton } from "@components/ui/TkButton";
 import { TkInputText } from "@components/ui/TkInputText";
-import { UtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
+
+import { DebouncedUtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
 import { selectHasPermissions } from "@redux/CurrentUserSlice";
 import {
 	clearStaffViewFilters,
@@ -27,8 +28,9 @@ import {
 } from "@redux/StaffViewSlice";
 import { type staffViewFiltersPart_QueryFragment$key } from "@relay/staffViewFiltersPart_QueryFragment.graphql";
 import { type staffViewFiltersPart_ScenarioFragment$key } from "@relay/staffViewFiltersPart_ScenarioFragment.graphql";
+import { type AssignmentStatus } from "@relay/staffViewPart_Query.graphql";
+import { FromToFilters } from "@screens/project-view/parts/from-to-filters";
 import { StaffViewAssignmentTagsFilter } from "@screens/staff-view/parts/assignment-tags-filter";
-import { FromToFilters } from "@screens/staff-view/parts/from-to-filters";
 import {
 	PeopleFilterDivisionsReset,
 	PeopleFilterDivisionsSelect,
@@ -43,6 +45,7 @@ import {
 	PeopleFilterSkillsSelect,
 } from "@screens/staff-view/parts/staff-view-filters-part/parts/people-filter-skills";
 import { QUERY_FRAGMENT, SCENARIO_FRAGMENT } from "./staff-view-filters-part.graphql";
+import { useDebouncedState } from "../../../../hooks/use-debounced-state.hook";
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
 	queryRef: staffViewFiltersPart_QueryFragment$key;
@@ -50,6 +53,7 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }: Props) => {
+	const [refetchKey, setRefetchKey] = useState(0);
 	const hasPermissions = useSelector(selectHasPermissions);
 	const gapDaysEnabled = hasPermissions(["AccountPermission_Auth_GapDaysEnabled"]);
 	const filters = useSelector(selectStaffViewFilters);
@@ -101,32 +105,12 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		ref.current?.toggle(e);
 	};
 
-	const NameFilterComponent = (
-		<div className="field">
-			<span className="p-input-icon-left w-12">
-				<i className="pi pi-search" />
-				<TkInputText
-					placeholder={"Search by Name"}
-					value={filters.filterByPersonName ?? ""}
-					onChange={(e) => {
-						dispatch(
-							setStaffViewFilters({
-								...filters,
-								filterByPersonName: e.target.value || undefined,
-							}),
-						);
-					}}
-				/>
-			</span>
-		</div>
-	);
-
 	const DivisionFilterComponent = (
 		<div className="field mr-2" style={{ minWidth: 150 }}>
 			<label htmlFor={"division-filter"}>Division</label>
 			<br />
 			<Suspense>
-				<DivisionsSelect
+				<DebouncedDivisionsSelect
 					placeholder="Filter by division"
 					fieldName="division-filter"
 					fieldValue={filters.filterByDivisions}
@@ -147,7 +131,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"stage-filter"}>Stage</label>
 			<br />
 			<Suspense>
-				<ProjectStagesSelect
+				<DebouncedProjectStagesSelect
 					placeholder="Filter by stage"
 					fieldName="stage-filter"
 					fieldValue={filters.filterByStages}
@@ -168,7 +152,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"region-filter"}>Region</label>
 			<br />
 			<Suspense>
-				<RegionsSelect
+				<DebouncedRegionsSelect
 					placeholder={"Filter by regions"}
 					fieldName="region-filter"
 					fieldValue={filters.filterByRegions}
@@ -190,7 +174,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"projects"}>Projects</label>
 			<br />
 			<Suspense>
-				<ProjectsSelect
+				<DebouncedProjectsSelect
 					fieldName="projects"
 					fieldValue={filters.filterByProjects}
 					placeholder={"Filter by projects"}
@@ -212,7 +196,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"assignment-roles-filter"}>Job Title</label>
 			<br />
 			<Suspense>
-				<AssignmentRolesSelect
+				<DebouncedAssignmentRolesSelect
 					fieldName="assignment-roles-filter"
 					fieldValue={filters.filterByAssignmentRoles}
 					placeholder={"Filter by job title"}
@@ -233,7 +217,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"assignment-roles-filter"}>Currently Assigned Roles</label>
 			<br />
 			<Suspense>
-				<AssignmentRolesSelect
+				<DebouncedAssignmentRolesSelect
 					fieldName="currently-assigned-roles-filter"
 					fieldValue={filters.filterByCurrentlyAssignedAssignmentRoles}
 					placeholder={"Filter by currently assigned roles"}
@@ -255,7 +239,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 			<label htmlFor={"skills-staff"}>Staff</label>
 			<br />
 			<Suspense>
-				<PeopleSelect
+				<DebouncedPeopleSelect
 					fieldName={"skills-staff"}
 					fieldValue={filters.filterByStaff}
 					placeholder={"Filter by Staff"}
@@ -276,7 +260,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2" style={{ minWidth: 150 }}>
 			<label htmlFor={"assignment-roles-filter"}>Utilization</label>
 			<br />
-			<UtilizationStatusSelect
+			<DebouncedUtilizationStatusSelect
 				fieldValue={filters.filterByUtilizationStatus}
 				placeholder={"Filter by utilization status"}
 				updateField={(e) => {
@@ -295,7 +279,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2">
 			<label htmlFor={"salary-from-filter"}>Salary from</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="salary-from-filter"
 				value={filters.filterBySalaryMinimum}
 				placeholder={"Salary from..."}
@@ -303,7 +287,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					dispatch(
 						setStaffViewFilters({
 							...filters,
-							filterBySalaryMinimum: e.value ?? undefined,
+							filterBySalaryMinimum: e ?? undefined,
 						}),
 					)
 				}
@@ -316,7 +300,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2">
 			<label htmlFor={"salary-to-filter"}>Salary to</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="salary-to-filter"
 				value={filters.filterBySalaryMaximum}
 				placeholder={"... salary to"}
@@ -324,7 +308,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					dispatch(
 						setStaffViewFilters({
 							...filters,
-							filterBySalaryMaximum: e.value ?? undefined,
+							filterBySalaryMaximum: e ?? undefined,
 						}),
 					)
 				}
@@ -338,7 +322,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2">
 			<label htmlFor={"gap-days-from-filter"}>Gap days from</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="gap-days-from-filter"
 				value={filters.filterByGapDaysMinimum}
 				placeholder={"Gap days from..."}
@@ -346,7 +330,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					dispatch(
 						setStaffViewFilters({
 							...filters,
-							filterByGapDaysMinimum: e.value ?? undefined,
+							filterByGapDaysMinimum: e ?? undefined,
 						}),
 					)
 				}
@@ -357,7 +341,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2">
 			<label htmlFor={"gap-days-to-filter"}>Gap days to</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="gap-days-to-filter"
 				value={filters.filterByGapDaysMaximum}
 				placeholder={"... gap days to"}
@@ -365,7 +349,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					dispatch(
 						setStaffViewFilters({
 							...filters,
-							filterByGapDaysMaximum: e.value ?? undefined,
+							filterByGapDaysMaximum: e ?? undefined,
 						}),
 					)
 				}
@@ -377,7 +361,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"executive"}>Executives</label>
 			<br />
-			<ExecutivesSelect
+			<DebouncedExecutivesSelect
 				scenarioId={scenario.id}
 				placeholder="Filter by executives"
 				fieldValue={filters.filterByExecutives}
@@ -397,7 +381,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"assignment-status"}>Assignment Status</label>
 			<br />
-			<Dropdown
+			<DebouncedPrDropdown<AssignmentStatus>
 				name="assignment-status"
 				placeholder="Either"
 				options={[
@@ -410,7 +394,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					dispatch(
 						setStaffViewFilters({
 							...filters,
-							filterByAssignmentStatus: e.value ?? undefined,
+							filterByAssignmentStatus: e ?? undefined,
 						}),
 					);
 				}}
@@ -424,6 +408,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 				disabled={Object.entries(filters).length === 0}
 				label="Reset filters"
 				onClick={() => {
+					setRefetchKey((k) => k + 1);
 					dispatch(clearStaffViewFilters());
 				}}
 			/>
@@ -451,7 +436,7 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 				...props.style,
 			}}
 		>
-			{NameFilterComponent}
+			<NameFilterComponent />
 
 			<TkButton
 				onClick={handleToggleModalVisibility}
@@ -460,7 +445,21 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 				style={{ flexGrow: 0, flexShrink: 0, height: "min-content" }}
 			/>
 
-			<FromToFilters />
+			<FromToFilters
+				key={"utilization-window-" + refetchKey}
+				label={"Utilization"}
+				initialState={{ startDate: filters.startDate, endDate: filters.endDate }}
+				needsBoth
+				onChange={(newValue) => {
+					dispatch(
+						setStaffViewFilters({
+							...filters,
+							startDate: newValue.startDate,
+							endDate: newValue.endDate,
+						}),
+					);
+				}}
+			/>
 			<OverlayPanel ref={ref} showCloseIcon style={{ minWidth: "30%", width: "min-content" }}>
 				<Panel headerTemplate={headerTemplate} header="Filters">
 					<TabView>
@@ -479,6 +478,31 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 								<PeopleFilterRegionsSelect />
 								<PeopleFilterDivisionsSelect />
 								<PeopleFilterSkillsSelect />
+								<div className="mr-2" style={{ minWidth: 500 }}>
+									<FromToFilters
+										key={"expiration-date-" + refetchKey}
+										initialState={{
+											startDate: filters.filterBySkillExpirationDate?.from,
+											endDate: filters.filterBySkillExpirationDate?.to,
+										}}
+										needsBoth={false}
+										onChange={(newValue) => {
+											dispatch(
+												setStaffViewFilters({
+													...filters,
+													filterBySkillExpirationDate:
+														!!newValue.startDate || !!newValue.endDate
+															? {
+																	from: newValue.startDate,
+																	to: newValue.endDate,
+															  }
+															: undefined,
+												}),
+											);
+										}}
+										label={"Skill expiration date"}
+									/>
+								</div>
 							</p>
 						</TabPanel>
 						<TabPanel header="Project filters">
@@ -785,6 +809,42 @@ export const StaffViewFiltersPart = ({ queryRef, scenarioFragmentRef, ...props }
 					}}
 				/>
 			)}
+		</div>
+	);
+};
+
+const NameFilterComponent = () => {
+	const filters = useSelector(selectStaffViewFilters);
+	const dispatch = useDispatch();
+	const [state, setState] = useDebouncedState(
+		filters.filterByPersonName,
+		(newValue) => {
+			dispatch(
+				setStaffViewFilters({
+					...filters,
+					filterByPersonName: newValue ?? "",
+				}),
+			);
+		},
+		500,
+	);
+
+	useEffect(() => {
+		setState(filters.filterByPersonName);
+	}, [filters.filterByPersonName]);
+
+	return (
+		<div className="field">
+			<span className="p-input-icon-left w-12">
+				<i className="pi pi-search" />
+				<TkInputText
+					placeholder={"Search by Name"}
+					value={state}
+					onChange={(e) => {
+						setState(e.currentTarget.value ?? "");
+					}}
+				/>
+			</span>
 		</div>
 	);
 };

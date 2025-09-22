@@ -1,5 +1,5 @@
 import debounce from "lodash.debounce";
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
 	readInlineData,
@@ -12,9 +12,12 @@ import { PersonCard } from "@components/person-card";
 import { PersonCardBaseStyles } from "@components/person-card/person-card.styles";
 import { selectCurrentUser } from "@redux/CurrentUserSlice";
 import {
+	type AssignmentWeightForInterval,
 	selectShouldUseTagColor,
+	selectShowWeights,
 	selectStaffViewFilters,
 	setShouldSeeUseTagColorButton,
+	setStaffViewAssignmentWeightsForIntervals,
 } from "@redux/StaffViewSlice";
 import { type allocationBarProvider_IntervalFragment$key } from "@relay/allocationBarProvider_IntervalFragment.graphql";
 import {
@@ -23,14 +26,14 @@ import {
 } from "@relay/staffViewPart_Query.graphql";
 import { type staffViewPart_RefetchQuery } from "@relay/staffViewPart_RefetchQuery.graphql";
 import { type staffViewPart_ScenarioFragment$key } from "@relay/staffViewPart_ScenarioFragment.graphql";
-import { applyFilter } from "@screens/project-view/parts/projects-grid-part/parts/projects-grid-part-content/projects-grid-part-content.utils";
+import { AllocationBarComponent } from "@screens/staff-view/parts/allocation-bar/component/allocation-bar.component";
 import {
 	AllocationBarProvider,
 	type AllocationBarProviderRef,
 	INTERVAL_FRAGMENT,
 } from "@screens/staff-view/parts/allocation-bar/context";
-import { AllocationBarComponent } from "@screens/staff-view/parts/AllocationBarComponent";
 import { IntervalHeaderComponent } from "@screens/staff-view/parts/IntervalHeaderComponent";
+import { useStaffViewPersonOnAssignmentFiltersInput } from "@screens/staff-view/parts/staff-view-part/parts/use-staff-view-person-on-assignment-filters-input.hook";
 import { StaffViewAllocationType } from "@screens/staff-view/parts/staff-view-part/staff-view-part.consts";
 import {
 	SCENARIO_FRAGMENT,
@@ -46,10 +49,12 @@ import {
 	HEADER_MARGIN,
 	HEADER_SIZE,
 	LANE_HEIGHT,
+	LANE_MIN_HEIGHT,
 	MARGIN_BETWEEN_LANES,
 	MARGIN_BETWEEN_PEOPLE,
 	SIDEBAR_SIZE,
 	SUBHEADER_SIZE,
+	WITH_WEIGHTS_MODIFIER,
 } from "@screens/staff-view/parts/staff-view.utils";
 import { useStaffViewUtilizationWindow } from "@utils/use-utilization-window.hook";
 
@@ -58,15 +63,17 @@ interface OwnProps {
 	isPrintViewVisible: boolean;
 }
 
-export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
+export const StaffViewPart = memo(({ scenarioId, isPrintViewVisible }: OwnProps) => {
 	const dispatch = useDispatch();
 
 	const filters = useSelector(selectStaffViewFilters);
+	const showWeight = useSelector(selectShowWeights);
 	const shouldSortWithTags = useSelector(selectShouldUseTagColor);
 	const utilizationWindow = useStaffViewUtilizationWindow();
+	const personOnAssignmentFiltersInput = useStaffViewPersonOnAssignmentFiltersInput();
 
-	const input: staffViewPart_Query$variables = useMemo(
-		() => ({
+	const input: staffViewPart_Query$variables = useMemo(() => {
+		return {
 			id: scenarioId,
 			sort: filters.sort,
 			showAll: filters.showPast,
@@ -80,40 +87,11 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 					? filters.filterByExecutives
 					: undefined,
 			},
-			personFiltersOpt: {
-				executives: filters.filterByExecutives?.length
-					? filters.filterByExecutives
-					: undefined,
-				gapDays: {
-					from: filters.filterByGapDaysMinimum,
-					to: filters.filterByGapDaysMaximum,
-				},
-				salary: { from: filters.filterBySalaryMinimum, to: filters.filterBySalaryMaximum },
-				assignmentInDateRange: {
-					from:
-						filters.filterByAssignmentDateMinimum ??
-						filters.filterByAllocatedDateMinimum,
-					to:
-						filters.filterByAssignmentDateMaximum ??
-						filters.filterByAllocatedDateMaximum,
-				},
-				ids: filters.filterByStaff,
-				name: filters.filterByPersonName,
-				currentlyAssignedAssignmentRoles: filters.filterByCurrentlyAssignedAssignmentRoles,
-				jobTitles: filters.filterByAssignmentRoles,
-				utilizationStatuses: filters.filterByUtilizationStatus,
-				utilizationWindow,
-				assignmentTags: applyFilter(filters.filterByAssignmentTags),
-				regions: applyFilter(filters.peopleFilterRegion),
-				divisions: applyFilter(filters.peopleFilterDivision),
-				skillFilters: applyFilter(filters.peopleFilterSkills),
-				assignmentStatus: applyFilter(filters.filterByAssignmentStatus),
-			},
+			personFiltersOpt: personOnAssignmentFiltersInput,
 			intervalType: filters.intervalType || "Weeks",
 			utilizationWindow,
-		}),
-		[scenarioId, filters, shouldSortWithTags],
-	);
+		};
+	}, [scenarioId, filters, shouldSortWithTags]);
 	const query = useLazyLoadQuery<staffViewPart_Query>(STAFF_VIEW_QUERY, input, {
 		fetchPolicy: "network-only",
 	});
@@ -123,11 +101,21 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 		staffViewPart_ScenarioFragment$key
 	>(SCENARIO_FRAGMENT, query.node!);
 
+	useEffect(() => {
+		dispatch(
+			setStaffViewAssignmentWeightsForIntervals(
+				(scenario?.staffView?.weightsForIntervals as
+					| AssignmentWeightForInterval[]
+					| undefined) ?? [],
+			),
+		);
+	}, [scenario?.staffView?.weightsForIntervals]);
+
 	const [initialLoad, setInitialLoadComplete] = useState(true);
 
-	const debouncedRefetch = () => {
+	const debouncedRefetch = useCallback(() => {
 		refetch(input, { fetchPolicy: "network-only" });
-	};
+	}, [input, refetch]);
 
 	const assigmentIds = scenario.staffView.allocationGroups
 		.flatMap((e) => e.allocations)
@@ -140,26 +128,21 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 	});
 
 	const allocationBarProviderRef = useRef<AllocationBarProviderRef>(null);
-	const debouncedEventHandler = useMemo(
-		() => {
-			const cb = () => {
-				debouncedRefetch();
-				allocationBarProviderRef.current?.resetPosition();
-			};
-			return debounce(cb, 1000);
-		},
-		// eslint-disable-next-line
-		[input],
-	);
+	const debouncedEventHandler = useMemo(() => {
+		const cb = () => {
+			debouncedRefetch();
+			allocationBarProviderRef.current?.resetPosition();
+		};
+		return debounce(cb, 1000);
+	}, [debouncedRefetch]);
 
 	useEffect(() => {
 		if (initialLoad) {
 			setInitialLoadComplete(false);
-		} else if (filters) {
+		} else if (input) {
 			debouncedEventHandler();
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [input]);
+	}, [input, debouncedEventHandler]);
 
 	let userOffset = HEADER_SIZE + HEADER_MARGIN;
 
@@ -183,12 +166,20 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 	const leftHandSide = useMemo(() => {
 		return scenario.staffView.allocationGroups.map((allocationGroup) => {
 			return allocationGroup.allocations.map((staffViewAllocation, index) => {
-				const height = calculateLaneHeight(staffViewAllocation?.lanes?.length ?? 0);
+				const hasMoreThan1Lane = staffViewAllocation.lanes.length > 1;
+				const basePersonCardHeight = !hasMoreThan1Lane
+					? LANE_MIN_HEIGHT
+					: calculateLaneHeight(
+							staffViewAllocation?.lanes?.length ?? 0,
+							hasMoreThan1Lane,
+							showWeight,
+					  );
 				const person = staffViewAllocation.person;
 				const assignmentRole = staffViewAllocation.assignmentRole;
 				const showSubheader = showSubheaders && index === 0;
 
-				const heightWithSubheader = height + (showSubheader ? SUBHEADER_SIZE : 0);
+				const playerCardHeightWithSubHeader =
+					basePersonCardHeight + (showSubheader ? SUBHEADER_SIZE : 0);
 
 				const status = staffViewAllocation.person?.id
 					? StaffViewAllocationType.person
@@ -244,30 +235,34 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 						className="flex flex-column"
 						key={key}
 						style={{
-							minHeight: heightWithSubheader,
-							maxHeight: heightWithSubheader,
-							height: heightWithSubheader,
+							minHeight: playerCardHeightWithSubHeader,
+							maxHeight: playerCardHeightWithSubHeader,
+							height: playerCardHeightWithSubHeader,
 							marginBottom: MARGIN_BETWEEN_PEOPLE,
 						}}
 					>
 						{showSubheader && (
-							<h3
+							<div
 								className="mt-0"
 								style={{
-									fontSize: 18,
-									marginBottom: 5,
+									fontSize: "1rem",
+									paddingBottom: "1rem",
+									fontWeight: "bold",
+									textWrap: "nowrap",
+									textOverflow: "ellipsis",
+									overflowX: "hidden",
 								}}
 							>
 								{allocationGroup.assignmentRole?.name ??
 									allocationGroup.project?.name}
-							</h3>
+							</div>
 						)}
 						{content}
 					</div>
 				);
 			});
 		});
-	}, [scenario, showSubheaders]);
+	}, [scenario, showSubheaders, showWeight]);
 
 	const cu = useSelector(selectCurrentUser);
 	const hideUtilzationWindowHighlighting =
@@ -351,13 +346,21 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 										cumulativeSubheaderOffset =
 											cumulativeSubheaderOffset + subheaderOffset;
 
+										const hasMoreThan1Lanes =
+											staffViewAllocation.lanes.length > 1;
+
 										const lanes = staffViewAllocation?.lanes?.flatMap(
 											(lane, laneIndex) => {
+												const factor = showWeight
+													? hasMoreThan1Lanes
+														? WITH_WEIGHTS_MODIFIER
+														: 1
+													: 1;
+												const laneHeight = factor * LANE_HEIGHT;
 												const laneTopOffset =
 													userOffset +
 													cumulativeSubheaderOffset +
-													laneIndex *
-														(LANE_HEIGHT + MARGIN_BETWEEN_LANES);
+													laneIndex * (laneHeight + MARGIN_BETWEEN_LANES);
 
 												return lane.allocations.map(
 													(allocation, allocationIndex) => {
@@ -429,6 +432,8 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 
 										const allLanesHeight = calculateLaneHeight(
 											staffViewAllocation?.lanes?.length ?? 0,
+											hasMoreThan1Lanes,
+											showWeight,
 										);
 
 										userOffset =
@@ -466,4 +471,4 @@ export const StaffViewPart = ({ scenarioId, isPrintViewVisible }: OwnProps) => {
 			)}
 		</div>
 	);
-};
+});

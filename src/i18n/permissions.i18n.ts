@@ -38,4 +38,5 @@ export const PERMISSION_TRANSLATIONS: Record<Permission, string> = {
 	UserInAccountPermission_System_Owner: "Owner",
 	UserInAccountPermission_Tasks_Tasks: "View tasks",
 	UserInAccountPermission_Precon_Edit: "Use Precon Integration",
+	AccountPermission_Southway_READDWH: "Read access to Southway DWH",
 };

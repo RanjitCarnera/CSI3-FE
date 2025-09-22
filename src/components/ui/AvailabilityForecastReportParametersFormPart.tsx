@@ -1,11 +1,14 @@
+import { type DropdownOption } from "@thekeytechnology/epic-ui/dist/components/dropdown/dropdown.types";
 import { type FormikState } from "formik";
+import { Dropdown } from "primereact/dropdown";
 import React from "react";
 import { ProjectsSelectField } from "@components/relay/ProjectsSelectField";
 import { ProjectStagesSelect } from "@components/relay/ProjectStagesSelect";
+import type { AvailabilityForecastKindEnum } from "@relay/GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment.graphql";
 import { type DocumentBuilderFileFormatKind } from "@relay/GenerateReportButton_ExecuteDocumentBuilderMutation.graphql";
 import { AvailabilityForecastReportRowField } from "./AvailabilityForecastReportRowField";
 import { DefaultSwitchComponent } from "./DefaultTextInput";
-import { ValidatedField } from "./ValidatedField";
+import { ValidatedField, type ValidatedFieldConfig } from "./ValidatedField";
 import { type ForecastRowParameter } from "../../redux/AvailabilityForecastSlice";
 import { DivisionsSelect } from "../relay/DivisionsSelect";
 import { type ReportParametersFormState } from "../relay/GenerateReportButton";
@@ -20,6 +23,9 @@ export interface AvailabilityForecastReportParametersFormState extends ReportPar
 	countPossibleUtilizationNotPeople?: boolean;
 	showProjects?: boolean;
 	fileFormat?: DocumentBuilderFileFormatKind;
+	capInMonths: number;
+
+	kind: AvailabilityForecastKindEnum;
 }
 
 interface OwnProps {
@@ -34,6 +40,7 @@ interface OwnProps {
 }
 
 export const AvailabilityForecastReportParametersFormPart = ({ formik }: OwnProps) => {
+	const disableForecastCap = Boolean(formik.values.fromOpt || formik.values.toOpt);
 	return (
 		<>
 			<ValidatedField<AvailabilityForecastReportParametersFormState, string[]>
@@ -110,6 +117,99 @@ export const AvailabilityForecastReportParametersFormPart = ({ formik }: OwnProp
 				formikConfig={formik}
 				component={DefaultSwitchComponent}
 			/>
+			<ValidatedField<
+				AvailabilityForecastReportParametersFormState,
+				AvailabilityForecastKindEnum
+			>
+				name={"kind"}
+				label={"Interval"}
+				placeholder={"Select an interval"}
+				formikConfig={formik}
+				component={AvailabilityForecastKindEnumDropdown}
+			/>
+			<ValidatedField<
+				AvailabilityForecastReportParametersFormState,
+				AvailabilityForecastKindEnum
+			>
+				disabled={disableForecastCap}
+				name={"capInMonths"}
+				label={"Cap in months"}
+				placeholder={"Select a forecast cap"}
+				formikConfig={formik}
+				component={AvailabilityForecastCapInMonthsDropdown}
+			/>
 		</>
 	);
 };
+
+const AvailabilityForecastCapInMonthsDropdown = (
+	validatedConfig: ValidatedFieldConfig<AvailabilityForecastKindEnum>,
+) => (
+	<Dropdown
+		disabled={validatedConfig.disabled}
+		options={
+			// @ts-expect-error
+			[
+				{
+					label: "By 3 months",
+					value: 3,
+				},
+				{
+					label: "By 6 months",
+					value: 6,
+				},
+				{
+					label: "By 12 months",
+					value: 12,
+				},
+				{
+					label: "By 18 months",
+					value: 18,
+				},
+				{
+					label: "By 24 months",
+					value: 24,
+				},
+				{
+					label: "By 36 months",
+					value: 36,
+				},
+			] as DropdownOption[]
+		}
+		value={validatedConfig.fieldValue}
+		onChange={(e) => {
+			validatedConfig.updateField(e.value);
+		}}
+	/>
+);
+
+export const AvailabilityForecastKindEnumDropdown = (
+	validatedConfig: ValidatedFieldConfig<AvailabilityForecastKindEnum>,
+) => (
+	<Dropdown
+		options={
+			[
+				{
+					label: "By days",
+					value: "DayAvailabilityForecast",
+				},
+				{
+					label: "By week",
+					value: "CalendarWeekAvailabilityForecast",
+				},
+				{
+					label: "By month",
+					value: "YearMonthAvailabilityForecast",
+				},
+				{
+					label: "By quarter",
+					value: "YearQuarterAvailabilityForecast",
+				},
+			] as DropdownOption[]
+		}
+		value={validatedConfig.fieldValue}
+		onChange={(e) => {
+			validatedConfig.updateField(e.value);
+		}}
+	/>
+);

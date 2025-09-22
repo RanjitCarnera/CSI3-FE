@@ -19,17 +19,12 @@ export const EditSkillButton = (props: EditSkillButtonProps) => {
 		SKILL_FRAGMENT,
 		props.skillFragmentRef,
 	);
-	const [edit, _] = useMutation<editSkillButton_EditMutation>(EDIT_MUTATION);
+	const [edit] = useMutation<editSkillButton_EditMutation>(EDIT_MUTATION);
 	const handleSubmit = (
 		values: EditSkillButtonFormState,
 		onHide: () => void,
 		ref: React.MutableRefObject<FormikProps<EditSkillButtonFormState> | null>,
 	) => {
-		const data = {
-			name: values.name!,
-			skillCategoryRef: values.skillCategoryRef!,
-			description: values.description,
-		};
 		const binaryDimension = {
 			binary: {
 				kind: "binary",
@@ -49,9 +44,9 @@ export const EditSkillButton = (props: EditSkillButtonProps) => {
 				input: {
 					skillId: skill.id,
 					data: {
-						name: data.name,
-						skillCategoryId: data.skillCategoryRef,
-						description: data.description,
+						name: values.name!,
+						skillCategoryId: values.skillCategoryRef!,
+						description: values.description,
 						dimension,
 					},
 				},

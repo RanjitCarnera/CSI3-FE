@@ -9,11 +9,17 @@ import {
 	type projectsSelect_ProjectInlineFragment$key,
 } from "@relay/projectsSelect_ProjectInlineFragment.graphql";
 import { type projectsSelect_Query } from "@relay/projectsSelect_Query.graphql";
+import { withDebounce } from "@utils/with-debounce";
 
 const PROJECTS_QUERY = graphql`
 	query projectsSelect_Query($filterByName: String, $alwaysIncludeIds: [ID!]) {
 		Project {
-			Projects(first: 100, filterByName: $filterByName, alwaysIncludeIds: $alwaysIncludeIds) {
+			Projects(
+				first: 100
+				filterByName: $filterByName
+				alwaysIncludeIds: $alwaysIncludeIds
+				activationStatus: true
+			) {
 				edges {
 					node {
 						...projectsSelect_ProjectInlineFragment
@@ -49,8 +55,7 @@ export const ProjectsSelect = (fieldConfig: ValidatedFieldConfig<string[]>) => {
 				);
 			});
 		// eslint-disable-next-line
-	}, [])
-
+	}, []);
 
 	return (
 		<MultiSelect
@@ -98,3 +103,5 @@ export const ProjectsSelect = (fieldConfig: ValidatedFieldConfig<string[]>) => {
 		/>
 	);
 };
+
+export const DebouncedProjectsSelect = withDebounce(ProjectsSelect);

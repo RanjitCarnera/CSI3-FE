@@ -10,6 +10,7 @@ export const PERSON_FRAGMENT = graphql`
 				node {
 					id
 					data {
+						expirationDate
 						value {
 							... on NumericalAssessmentValue {
 								kind
@@ -65,7 +66,6 @@ export const SKILL_INLINE_FRAGMENT = graphql`
 			id
 			name
 		}
-
 		dimension {
 			kind
 			... on NumericalDimension {
@@ -133,6 +133,20 @@ export const DISASSOCIATE_SKILLS_BY_CATEGORY_MUTATION = graphql`
 						...EditPersonButton_PersonFragment
 						...editPersonSkillAssociationsButton_PersonFragment
 					}
+				}
+			}
+		}
+	}
+`;
+
+export const SET_SKILL_ASSOCIATION_EXPIRATION_DATE_MUTATION = graphql`
+	mutation editPersonSkillAssociationsModalContent_SetSkillAssociationExpirationDateInputMutation(
+		$input: SetSkillAssociationExpirationDateInput!
+	) {
+		Skills {
+			setSkillAssociationExpirationDate(input: $input) {
+				skillAssociation {
+					...skillsDisplay_SkillAssociationInlineFragment
 				}
 			}
 		}

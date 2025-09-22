@@ -1,7 +1,7 @@
-import React from "react";
-import { FilterTagFlex, FilterTagWrapper } from "./filter-tag.style";
-import { FilterTagProps } from "./filter-tag.interface";
 import { Tooltip } from "primereact/tooltip";
+import React from "react";
+import { type FilterTagProps } from "./filter-tag.interface";
+import { FilterTagFlex, FilterTagWrapper } from "./filter-tag.style";
 
 export const FilterTag = ({ header, value, icon, tooltip, ...props }: FilterTagProps) => {
 	const id = `filter-tag-${Math.floor(Math.random() * 1000)}`;
