@@ -1,5 +1,5 @@
-import { FormDialogButton } from "@thekeytechnology/framework-react-components";
 import moment from "moment-timezone";
+import React, { useState } from "react";
 import { useFragment, useMutation } from "react-relay";
 import { toast } from "react-toastify";
 import { convertMarkerInputsToCUCInput } from "@components/cuc-field/cuc-field.utils";
@@ -13,6 +13,8 @@ import {
 	SYNC_ASSIGNMENTS_WITH_CUC_MUTATION,
 } from "@components/relay/project-card/parts/sync-assignments-cuc-button/sync-assignments-cuc-button.graphql";
 import { type SyncAssignmentsCucButtonProps } from "@components/relay/project-card/parts/sync-assignments-cuc-button/sync-assignments-cuc-button.types";
+import { SuspenseDialogWithState } from "@components/ui/SuspenseDialogWithState";
+import { TkButtonLink } from "@components/ui/TkButtonLink";
 import { type syncAssignmentsCucButton_ProjectInScenarioFragment$key } from "@relay/syncAssignmentsCucButton_ProjectInScenarioFragment.graphql";
 import {
 	type AssignmentSyncCucInstructionInput,
@@ -29,8 +31,31 @@ export const SyncAssignmentsCucButton = ({
 	const [commit] = useMutation<syncAssignmentsCucButton_SyncAssignmentsWithCucMutation>(
 		SYNC_ASSIGNMENTS_WITH_CUC_MUTATION,
 	);
+	const [isVisible, setVisible] = useState(false);
 
 	const initialState =
+		projectInScenario.assignments.edges
+			?.map((e) => e?.node!)
+			.filter((node) => {
+				const end = moment(node.endDate);
+				const today = moment();
+				return end.isAfter(today);
+			})
+			.sort(
+				(a, b) =>
+					(a.validAssignmentRoles.map((ar) => ar.sortOrder).max() ?? 0) -
+					(b.validAssignmentRoles.map((ar) => ar.sortOrder).max() ?? 0),
+			)
+			.map(
+				(e) =>
+					({
+						assignmentId: e?.id!,
+						shouldSync: false,
+						cucTemplateRef: undefined,
+						cuc: undefined,
+					}) as SyncAssignmentWithCucInput,
+			) ?? [];
+	const initialValuesWithDefaultCucTemplates =
 		projectInScenario.assignments.edges
 			?.map((e) => e?.node!)
 			.filter((node) => {
@@ -48,49 +73,65 @@ export const SyncAssignmentsCucButton = ({
 					}) as SyncAssignmentWithCucInput,
 			) ?? [];
 	return (
-		<FormDialogButton<SyncAssignmentsCucFormState>
-			title={"Sync assignments' CUC"}
-			buttonContent={{ icon: "pi pi-sync" }}
-			buttonVariant={"subtle"}
-		>
-			{(formRef, onHide) => {
-				return (
-					<SyncAssignmentsCucForm
-						projectInScenarioFragmentRef={projectInScenario}
-						ref={formRef}
-						onSubmit={(values) => {
-							const syncInstructions: AssignmentSyncCucInstructionInput[] =
-								values.syncAssignments
-									.filter((e) => e.shouldSync)
-									.map((e) => ({
-										assignmentRef: e.assignmentId,
-										cucOpt: e.cuc
-											? convertMarkerInputsToCUCInput(e.cuc)
-											: undefined,
-										cucTemplateRefOpt: e.cucTemplateRef,
-									}));
-							commit({
-								variables: {
-									input: {
-										syncInstructions,
-									},
-								},
-								onCompleted: () => {
-									onHide();
-									toast.success(
-										"Synced " + syncInstructions.length + " assignments.",
-									);
-								},
-							});
-						}}
-						initialState={{
-							syncAssignments: initialState,
-						}}
-					/>
-				);
-			}}
-		</FormDialogButton>
+		<>
+			<TkButtonLink
+				icon="pi pi-sync"
+				iconPos="left"
+				label={""}
+				onClick={() => {
+					setVisible(true);
+				}}
+			/>
+
+			<SuspenseDialogWithState<SyncAssignmentsCucFormState>
+				title={"Sync assignments' CUC"}
+				isVisible={isVisible}
+				onHide={() => {
+					setVisible(false);
+				}}
+				formComponent={(ref, onHide) => {
+					return (
+						<>
+							<SyncAssignmentsCucForm
+								projectInScenarioFragmentRef={projectInScenario}
+								ref={ref}
+								initialValuesWithDefaultCucTemplates={
+									initialValuesWithDefaultCucTemplates
+								}
+								onSubmit={(values) => {
+									const syncInstructions: AssignmentSyncCucInstructionInput[] =
+										values.syncAssignments
+											.filter((e) => !!e.cucTemplateRef)
+											.map((e) => ({
+												assignmentRef: e.assignmentId,
+												cucOpt: e.cuc
+													? convertMarkerInputsToCUCInput(e.cuc)
+													: undefined,
+												cucTemplateRefOpt: e.cucTemplateRef,
+											}));
+
+									commit({
+										variables: {
+											input: {
+												syncInstructions,
+											},
+										},
+										onCompleted: () => {
+											onHide();
+											toast.success(
+												`Synced ${syncInstructions.length} assignments.`,
+											);
+										},
+									});
+								}}
+								initialState={{
+									syncAssignments: initialState,
+								}}
+							/>
+						</>
+					);
+				}}
+			/>
+		</>
 	);
 };
-
-// TODO: take a look at AssignmentRoleAssociationField for array form

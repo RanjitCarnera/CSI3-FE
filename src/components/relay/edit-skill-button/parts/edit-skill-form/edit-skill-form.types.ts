@@ -1,10 +1,10 @@
-import { SkillDimensionTypeEnum } from "@relay/categoryForm_SkillFragment.graphql";
+import { type SkillDimensionTypeEnum } from "@relay/categoryForm_SkillFragment.graphql";
 
-export type EditSkillButtonFormState = {
+export interface EditSkillButtonFormState {
 	name?: string;
 	description?: string;
 	skillCategoryRef?: string;
 	dimension?: SkillDimensionTypeEnum;
 	dimensionCount: number;
 	dimensionExplanations: string[];
-};
+}

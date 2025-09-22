@@ -5,6 +5,8 @@ import { Column } from "primereact/column";
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLazyLoadQuery, usePaginationFragment } from "react-relay";
+import { DuplicateStaffingTemplateButton } from "@components/duplicate-staffing-template-button";
+import { withoutEventPropagation } from "@utils/table.utils";
 import { CreateStaffingTemplateButton } from "./CreateStaffingTemplateButton";
 import { DeleteStaffingTemplatesButton } from "./DeleteStaffingTemplatesButton";
 import { EditStaffingTemplateButton } from "./EditStaffingTemplateButton";
@@ -57,6 +59,7 @@ const PROJECTS_FRAGMENT = graphql`
 							isExecutive
 						}
 						...EditStaffingTemplateButton_StaffingTemplateFragment
+						...duplicateStaffingTemplateButton_StaffingTemplateFragment
 					}
 				}
 			}
@@ -103,7 +106,6 @@ export const StaffingTemplatesTable = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [filters]);
 	const [selection, setSelection] = useState<Array<{ id: string }>>([]);
-
 	return (
 		<>
 			<div className="flex justify-content-end gap-2">
@@ -144,7 +146,7 @@ export const StaffingTemplatesTable = () => {
 					body={(row) => {
 						return (
 							<div className="flex align-items-center">
-								{row.assignmentRoleAssociations.map(
+								{row.assignmentRoleAssociations?.map(
 									(association: any, index: number) => {
 										return (
 											<div
@@ -169,13 +171,18 @@ export const StaffingTemplatesTable = () => {
 				<Column
 					header="Actions"
 					body={(row) => {
-						return (
-							<div>
+						return withoutEventPropagation(
+							<div className={"flex justify-content-center align-items-center gap-2"}>
+								<DuplicateStaffingTemplateButton
+									className={"mr-2"}
+									staffingTemplateFragmentRef={row}
+									connectionId={__id}
+								/>
 								<EditStaffingTemplateButton
 									className="mr-2"
 									staffingTemplateFragmentRef={row}
 								/>
-							</div>
+							</div>,
 						);
 					}}
 				/>

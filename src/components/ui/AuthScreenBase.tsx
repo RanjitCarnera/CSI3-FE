@@ -1,5 +1,4 @@
 import React, { type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
 import styled from "styled-components";
 import { TkCard } from "./TkCard";
 import HarkinsBackground from "../../assets/harkins-background.jpg";
@@ -15,7 +14,7 @@ export const AuthScreenBase = ({ children }: OwnProps) => {
 			<AuthCardWrapper
 				header={
 					<div className="text-center pt-6">
-						<NavLink to={"/"}>
+						<a target={"_blank"} href={"https://teamweave.io"}>
 							<Logo
 								alt={"Harkins"}
 								src={TWLogo}
@@ -23,7 +22,7 @@ export const AuthScreenBase = ({ children }: OwnProps) => {
 									transform: "scale(1.5)",
 								}}
 							/>
-						</NavLink>
+						</a>
 					</div>
 				}
 			>

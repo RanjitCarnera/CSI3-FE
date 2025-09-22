@@ -17,7 +17,6 @@ import { CookiesProvider } from "react-cookie";
 import { Provider } from "react-redux";
 import { RelayEnvironmentProvider } from "react-relay";
 import { ToastContainer } from "react-toastify";
-import { createGlobalStyle } from "styled-components";
 import { ErrorFallback } from "@components/ui/ErrorFallback";
 import { Loader } from "@components/ui/Loader";
 import { HarkinsTheme } from "@corestyle/component-theme/component-theme";
@@ -25,6 +24,7 @@ import { PermissionBasedNavigation } from "./navigation/PermissionBasedNavigatio
 import { RelayEnvironment } from "./RelayEnvironment";
 import { Routes } from "./routes/Routes";
 import { ReduxStore } from "./Store";
+import { usePrimeFacesFix } from "./use-prime-faces-fix.hook";
 
 const isProduction = process.env.REACT_APP_APP_ENVIRONMENT === "production";
 
@@ -46,10 +46,10 @@ ChartJS.register(
 );
 
 function App() {
+	usePrimeFacesFix();
 	return (
 		<Provider store={ReduxStore}>
 			<CookiesProvider>
-				<GlobalStyles />
 				<TkComponentsContext.Provider value={HarkinsTheme}>
 					<ToastContainer autoClose={5000} newestOnTop={true} />
 					<Sentry.ErrorBoundary
@@ -60,7 +60,7 @@ function App() {
 					>
 						<Suspense fallback={<Loader />}>
 							<RelayEnvironmentProvider environment={RelayEnvironment}>
-								
+								{/* @ts-expect-error */}
 								<PermissionBasedNavigation routes={Routes} />
 							</RelayEnvironmentProvider>
 						</Suspense>
@@ -71,12 +71,6 @@ function App() {
 	);
 }
 
-const GlobalStyles = createGlobalStyle`
-	.p-overlaypanel.p-component {
-		z-index: 10 !important;
-	}
-
-`;
 export default App;
 
 export interface Tuple<T, K> {

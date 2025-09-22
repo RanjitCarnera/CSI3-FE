@@ -1,15 +1,10 @@
 import { Button } from "@thekeytechnology/framework-react-components";
 import { ContextMenu } from "primereact/contextmenu";
-import React, { useContext, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
+import React, { useContext, useEffect, useImperativeHandle, useLayoutEffect } from "react";
 import { Line } from "react-chartjs-2";
+import { useSelector } from "react-redux";
 import { readInlineData, useFragment, useRelayEnvironment } from "react-relay";
 import { fetchQuery } from "relay-runtime";
-import { createGlobalStyle } from "styled-components";
-import { ContextMenu as DropdownContextMenu } from "@components/context-menu";
-import {
-	ContextMenuKind,
-	type ContextMenuOption,
-} from "@components/context-menu/context-menu.types";
 import {
 	BACKGROUND_COLOR,
 	BORDER_COLOR,
@@ -46,10 +41,12 @@ import { EditTimeForm } from "@components/cuc-field/parts/edit-time-form";
 import { EditWeightForm } from "@components/cuc-field/parts/edit-weight-form";
 import { SelectMilestoneTemplateForm } from "@components/cuc-field/parts/select-milestone-template-form";
 import { createYLinePlugin } from "@components/cuc-field/parts/y-line.plugin";
+import { FormCucTemplateSelect } from "@components/form/form-cuc-template-select";
 import { CUC_INLINE_FRAGMENT } from "@components/relay/EditAssignmentButton";
 import { Slider } from "@components/slider";
 import { SuspenseDialogWithState } from "@components/ui/SuspenseDialogWithState";
 import { useDialogLogic } from "@components/ui/useDialogLogic";
+import { selectHasPermissions } from "@redux/CurrentUserSlice";
 import { type cucField_AssignmentFragment$key } from "@relay/cucField_AssignmentFragment.graphql";
 import { type cucField_CucTemplateQuery } from "@relay/cucField_CucTemplateQuery.graphql";
 import { type cucField_ProjectFragment$key } from "@relay/cucField_ProjectFragment.graphql";
@@ -92,7 +89,7 @@ export const CUCField = React.forwardRef<CUCFieldRef, CUCFieldProps>((props, ref
 });
 
 const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
-	({ topCap, bottomCap, fieldValue, updateField, projectFragmentRef, ...props }, ref) => {
+	({ topCap, bottomCap, fieldValue, updateField, projectFragmentRef, layer, ...props }, ref) => {
 		const projectFragmentOpt = useFragment<cucField_ProjectFragment$key>(
 			PROJECT_FRAGMENT,
 			projectFragmentRef ?? null,
@@ -121,6 +118,10 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 			options,
 		} = useContext(CucFieldContext);
 
+		console.log(
+			"contextMenuItems: ",
+			contextMenuItems.filter((e) => e.visible).map((e) => e.label),
+		);
 		useEffect(() => {
 			if (currentModalKind !== CurrentModalKind.delete) return;
 
@@ -146,6 +147,7 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 				},
 			});
 		}, [currentModalKind]);
+
 		// bind right click
 		useEffect(() => {
 			const canvas = chartRef.current?.canvas;
@@ -168,19 +170,31 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 				if (elements.length > 0) {
 					const index = elements[0].index;
 					setClickedPointIndex(index);
-					const name = fieldValue?.[index].name;
-					const isStartOrFinish = name === "Start" || name === "Finish";
-					// TODO: fix this issue, right click on any point after switching assignment roles on an existing assignment without explicit cuc.
-					if (isStartOrFinish) {
-						alert("Cannot edit start or finish dates.");
-						return false;
+
+					const datasetIndex = elements[0].datasetIndex;
+
+					const meta = chart.getDatasetMeta(datasetIndex);
+					const point = meta.data[index];
+
+					// Calculate distance from mouse to point
+					const dx = event.offsetX - point.x;
+					const dy = event.offsetY - point.y;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+
+					const maxDistance = 30; // pixels - adjust to tolerance
+					console.log("distance", distance);
+					if (distance > maxDistance) {
+						setClickedPointIndex(null);
 					} else {
-						// @ts-expect-error
-						contextMenuRef.current?.show(event);
+						setClickedPointIndex(index);
 					}
+
+					// @ts-expect-error
+					contextMenuRef.current?.show(event);
 				} else {
 					// @ts-expect-error
 					contextMenuRef.current?.show(event);
+					setClickedPointIndex(null);
 				}
 			};
 
@@ -199,6 +213,7 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 			};
 			chartRef.current?.canvas.addEventListener("click", handleOnClick);
 
+			setClickedPointIndex(null);
 			return () => {
 				chartRef.current?.canvas.removeEventListener("click", handleOnClick);
 			};
@@ -218,7 +233,14 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 			},
 		}));
 
+		const hasPermissions = useSelector(selectHasPermissions);
+		const hasPermission = hasPermissions(["UserInAccountPermission_MilestoneTemplate_Read"]);
+
 		useLayoutEffect(() => {
+			if (!hasPermission) {
+				setMilestoneTemplates([]);
+				return;
+			}
 			void getMilestoneTemplates().then((res) => {
 				setMilestoneTemplates(res);
 			});
@@ -227,34 +249,6 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 		const handleClearOnClick = () => {
 			updateField(DEFAULT_CUC_FIELD_MARKERS);
 		};
-
-		const contextMenuOptions: ContextMenuOption[] = [
-			{
-				kind: ContextMenuKind.override,
-				node: (
-					<Button
-						inputVariant={"subtle"}
-						content={{ icon: "pi pi-trash", label: "Reset", iconPosition: "left" }}
-						onClick={() => {
-							handleClearOnClick();
-							overlayRef.current?.hide();
-						}}
-					/>
-				),
-			},
-			{
-				kind: ContextMenuKind.normal,
-				icon: "pi pi-clone",
-				label: "From template",
-				iconPosition: "left",
-				onClick: () => {
-					setCurrentModalKind(CurrentModalKind.applyFromCucTemplate);
-					overlayRef.current?.hide();
-				},
-			},
-		];
-
-		const overlayRef = useRef<{ hide: () => void }>(null);
 
 		return (
 			<>
@@ -395,6 +389,7 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 				/>
 				<SuspenseDialogWithState<typeof applyFromCucTemplateFormSchema, string>
 					title={"Apply from cuc template"}
+					affirmativeText={"Apply"}
 					isVisible={currentModalKind === CurrentModalKind.applyFromCucTemplate}
 					onHide={() => {
 						setCurrentModalKind(null);
@@ -482,6 +477,56 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 					model={contextMenuItems}
 					style={{ minWidth: "250px" }}
 				/>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+					}}
+				>
+					<div style={{ flexGrow: 0 }}>
+						<Button
+							inputVariant={"subtle"}
+							content={{
+								icon: "pi pi-trash",
+								label: "Reset",
+								iconPosition: "left",
+							}}
+							onClick={() => {
+								handleClearOnClick();
+							}}
+						/>
+					</div>
+
+					<FormCucTemplateSelect
+						showPreviewButton={false}
+						placeholder={"From template..."}
+						fieldValue={undefined}
+						updateField={(cucTemplateRef) => {
+							if (!cucTemplateRef) return;
+
+							void fetchQuery<cucField_CucTemplateQuery>(
+								env,
+								CUC_TEMPLATE_QUERY,
+								{ id: cucTemplateRef },
+								{ fetchPolicy: "network-only" },
+							)
+								.toPromise()
+								.then((res) => {
+									if (!res?.node?.cuc) return;
+									const cucData =
+										readInlineData<EditAssignmentButton_CUCInlineFragment$key>(
+											CUC_INLINE_FRAGMENT,
+											res?.node?.cuc,
+										);
+									const markerInputs = convertCUCToMarkerInputs(cucData);
+									if (!markerInputs) return;
+									updateField(markerInputs);
+									handleFocus(markerInputs);
+								});
+						}}
+					/>
+				</div>
 				<div style={{ flex: 1 }}>
 					<div style={{ display: "flex", gap: "1rem", alignItems: "start" }}>
 						<div style={{ height: "40vh", width: "100%" }}>
@@ -508,20 +553,6 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 								position: "relative",
 							}}
 						>
-							<div
-								style={{
-									position: "absolute",
-									top: 0,
-									right: 0,
-									width: "2rem",
-									height: "2rem",
-								}}
-							>
-								<DropdownContextMenu
-									options={contextMenuOptions}
-									ref={overlayRef}
-								/>
-							</div>
 							<Slider
 								min={MAX.Y_MIN}
 								max={MAX.Y_MAX}
@@ -546,16 +577,7 @@ const Base = React.forwardRef<CUCFieldRef, CUCFieldProps>(
 						/>
 					</div>
 				</div>
-				<GlobalStyles />
 			</>
 		);
 	},
 );
-
-// necessary for the context menu to show over the modal here
-const GlobalStyles = createGlobalStyle`
-	.p-overlaypanel.p-component {
-		z-index: 1150 !important;
-	}
-
-`;

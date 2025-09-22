@@ -1,15 +1,15 @@
 import { graphql } from "babel-plugin-relay/macro";
-import { Suspense, useEffect, useLayoutEffect } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDispatch, useSelector } from "react-redux";
-import { useFragment, useLazyLoadQuery } from "react-relay";
+import { useLazyLoadQuery, useRefetchableFragment } from "react-relay";
 import { useMatch } from "react-router-dom";
-import { match } from "ts-pattern";
 import { LOCAL_STORAGE_KEY_CURRENT_SCENARIO } from "@components/ui/ChangeCurrentScenarioButton";
 import { selectCurrentUser } from "@redux/CurrentUserSlice";
-import { type Staffing } from "@relay/staffViewPart_Query.graphql";
-import { applyFilter } from "@screens/project-view/parts/projects-grid-part/parts/projects-grid-part-content/projects-grid-part-content.utils";
+import { type ScenarioProjectViewScreen_Refetch } from "@relay/ScenarioProjectViewScreen_Refetch.graphql";
+import { useProjectViewPersonOnAssignmentFiltersInput } from "@screens/project-view/parts/use-project-view-person-on-assignment-filters-input.hook";
+import { useProjectViewProjectWithAssignmentsFiltersInput } from "@screens/project-view/parts/use-project-view-project-with-assignments-filters-input.hook";
 import { useProjectViewUtilizationWindow } from "@utils/use-utilization-window.hook";
 import { ProjectsGridPart } from "./parts/projects-grid-part/ProjectsGridPart.component";
 import { RosterPart } from "./parts/roster-part";
@@ -22,9 +22,7 @@ import { RedirectTo } from "../../navigation/RedirectTo";
 import {
 	initializeFromDefaultView,
 	initializeFromPreferredView,
-	selectProjectViewFetchKey,
 	selectScenarioPeopleFilters,
-	selectScenarioProjectFilters,
 	selectSelectedProjectId,
 } from "../../redux/ProjectViewSlice";
 
@@ -102,8 +100,10 @@ const QUERY = graphql`
 		}
 	}
 `;
+
 const SCENARIO_QUERY = graphql`
 	fragment ScenarioProjectViewScreen_ScenarioFragment on Scenario
+	@refetchable(queryName: "ScenarioProjectViewScreen_Refetch")
 	@argumentDefinitions(
 		utilizationWindow: { type: "UtilizationWindowInput" }
 		projectFilters: { type: "ProjectWithAssignmentsFiltersInput" }
@@ -115,12 +115,8 @@ const SCENARIO_QUERY = graphql`
 				projectFilters: $projectFilters
 				personOnAssignmentFilters: $personOnAssignmentFilters
 			)
-		...rosterPart_ScenarioFragment
+		...rosterPart_ScenarioFragment @arguments(utilizationWindow: $utilizationWindow)
 		...DashboardHeader_ScenarioFragment
-
-		utilizationWithStandAndEndDate(utilizationWindow: $utilizationWindow) {
-			...personCard_ScenarioUtilizationFragment
-		}
 	}
 `;
 export const SCENARIO_PROJECT_VIEW_SCREEN_ROUTE = "/scenarios/:scenarioId/project-view";
@@ -133,11 +129,11 @@ export const ScenarioProjectViewScreen = () => {
 	} = useMatch(SCENARIO_PROJECT_VIEW_SCREEN_ROUTE)!;
 
 	const selectedProject = useSelector(selectSelectedProjectId);
-	const projectFilters = useSelector(selectScenarioProjectFilters);
+	const projectFilters = useProjectViewProjectWithAssignmentsFiltersInput();
 	const scenarioPeopleFilters = useSelector(selectScenarioPeopleFilters);
-	const fetchKey = useSelector(selectProjectViewFetchKey);
 
-	const utilzationWindow = useProjectViewUtilizationWindow();
+	const utilizationWindow = useProjectViewUtilizationWindow();
+	const personOnAssignmentFiltersInput = useProjectViewPersonOnAssignmentFiltersInput();
 	const query = useLazyLoadQuery<ScenarioProjectViewScreen_Query>(
 		QUERY,
 		{
@@ -156,44 +152,45 @@ export const ScenarioProjectViewScreen = () => {
 			filterByDistanceMinimum: scenarioPeopleFilters.filterByDistanceMinimum,
 			filterByDistanceMaximum: scenarioPeopleFilters.filterByDistanceMaximum,
 			filterByStaff: scenarioPeopleFilters.filterByStaff,
-			utilizationWindow: utilzationWindow,
-			projectFilters: {
-				divisions: applyFilter(projectFilters.filterByDivisions),
-				regions: applyFilter(projectFilters.filterByRegions),
-				stages: applyFilter(projectFilters.filterByStage),
-				inDateRange:
-					projectFilters.filterByDateFrom || projectFilters.filterByDateTo
-						? {
-								from: projectFilters.filterByDateFrom,
-								to: projectFilters.filterByDateTo,
-						  }
-						: undefined,
-				executives: applyFilter(projectFilters.filterByExecutives),
-				staffing: match(projectFilters.filterByStaffing)
-					.returnType<Staffing | undefined>()
-					.with("Fully staffed", () => "FullyStaffed")
-					.with("Not Fully Staffed", () => "NotFullyStaffed")
-					.otherwise(() => undefined),
-				assignmentStatus: applyFilter(projectFilters.filterByAssignmentStatus),
-			},
-			peopleOnAssignmentFilters: {
-				currentlyAssignedAssignmentRoles: applyFilter(
-					projectFilters.filterByAssignmentRoles,
-				),
-				executives: applyFilter(projectFilters.filterByExecutives),
-				ids: applyFilter(projectFilters.filterByStaff),
-				skillFilters: applyFilter(projectFilters.filterBySkills),
-				assignmentStatus: applyFilter(projectFilters.filterByAssignmentStatus),
-				assignmentTags: applyFilter(projectFilters.filterByAssignmentTags),
-				utilizationStatuses: applyFilter(projectFilters.peopleFilterUtilizationStatus),
-			},
+			utilizationWindow,
+			projectFilters,
+			peopleOnAssignmentFilters: personOnAssignmentFiltersInput,
 		},
-		{ fetchPolicy: "store-and-network", fetchKey },
+		{
+			fetchPolicy: "store-and-network",
+		},
 	);
-	const scenario = useFragment<ScenarioProjectViewScreen_ScenarioFragment$key>(
-		SCENARIO_QUERY,
-		query.node,
-	);
+
+	const [scenario, refetch] = useRefetchableFragment<
+		ScenarioProjectViewScreen_Refetch,
+		ScenarioProjectViewScreen_ScenarioFragment$key
+	>(SCENARIO_QUERY, query.node);
+
+	// TODO: -> onchange
+	const dep = JSON.stringify({
+		...utilizationWindow,
+		...personOnAssignmentFiltersInput,
+		...projectFilters,
+		scenarioId,
+	});
+
+	const [initialLoad, setInitialLoad] = useState(true);
+	useEffect(() => {
+		if (initialLoad) {
+			setInitialLoad(false);
+			return;
+		}
+		refetch(
+			{
+				id: scenarioId,
+				utilizationWindow,
+				projectFilters,
+				personOnAssignmentFilters: personOnAssignmentFiltersInput,
+			},
+			{ fetchPolicy: "store-and-network" },
+		);
+	}, [dep]);
+
 	useLayoutEffect(() => {
 		if (!scenario?.id) {
 			window.location.reload();

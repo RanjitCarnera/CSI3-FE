@@ -15,6 +15,7 @@ export const QUERY = graphql`
 				filterByName: $filterByName
 				alwaysIncludeIds: $alwaysIncludeIds
 				excludeIds: $excludeIds
+				activationStatus: true
 			) {
 				edges {
 					node {

@@ -1,19 +1,16 @@
-import {
-	Button,
-	DialogButton,
-	TkComponentsContext,
-} from "@thekeytechnology/framework-react-components";
-import React, { Suspense } from "react";
+import { Button } from "@thekeytechnology/framework-react-components";
+import React, { Suspense, useState } from "react";
 import { useSelector } from "react-redux";
 import { useFragment } from "react-relay";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { PersonDetailsModalContent } from "@components/person-details-button/parts/person-details-modal-content";
 import {
 	PERSON_FRAGMENT,
 	SCENARIO_FRAGMENT,
 	SCENARIO_UTILIZATION_FRAGMENT,
 } from "@components/person-details-button/person-details-button.graphql";
 import {
+	A,
 	AssignmentCardButtonWrapper,
 	ExtraComponentWrapper,
 	NameWrapper,
@@ -24,11 +21,14 @@ import {
 	type PersonDetailsButtonProps,
 	PersonDetailsButtonVariant,
 } from "@components/person-details-button/person-details-button.types";
+import { Loader } from "@components/ui/Loader";
+import { TkDialog } from "@components/ui/TkDialog";
 import { HarkinsTheme } from "@corestyle/component-theme/component-theme";
 import { type personDetailsButton_ScenarioFragment$key } from "@relay/personDetailsButton_ScenarioFragment.graphql";
 import { type personDetailsButton_ScenarioUtilizationFragment$key } from "@relay/personDetailsButton_ScenarioUtilizationFragment.graphql";
+import { SETTINGS_PEOPLE_PATH } from "@screens/people/people.consts";
+import { PersonDetailsModalContent } from "./parts/person-details-modal-content";
 import { selectHasPermissions } from "../../redux/CurrentUserSlice";
-import { Loader } from "../ui/Loader";
 
 export const PersonDetailsButton = ({
 	personFragmentRef,
@@ -89,57 +89,72 @@ export const PersonDetailsButton = ({
 		variant === PersonDetailsButtonVariant.roster
 			? RosterButtonWrapper
 			: AssignmentCardButtonWrapper;
+
+	const navigate = useNavigate();
+	const [visible, setVisible] = useState(false);
 	return (
-		<TkComponentsContext.Provider value={TemporaryTheme}>
-			<DialogButton
-				// @ts-expect-error
-				title={
+		<>
+			<ButtonWrapper
+				onClick={() => {
+					setVisible((boo) => !boo);
+				}}
+			>
+				<NameWrapper>{person?.name}</NameWrapper>
+				<SmallSpan>
+					{afterNameSlot}
+					{!hideGapDays && gapDaysEnabled ? gapDaysComponent : null}{" "}
+					{utilizationComponent}
+				</SmallSpan>
+			</ButtonWrapper>
+			<TkDialog
+				dismissableMask={true}
+				visible={visible}
+				onHide={() => {
+					setVisible((boo) => !boo);
+				}}
+				footer={
+					<div className="flex justify-content-center">
+						<Button
+							onClick={() => {
+								setVisible((boo) => !boo);
+							}}
+							content={{ label: "Cancel" }}
+							inputVariant={"subtle"}
+						/>
+					</div>
+				}
+				header={
 					<div>
-						<span>{person.name}</span>
+						<A
+							onClick={() => {
+								navigate(SETTINGS_PEOPLE_PATH, {
+									state: { personRef: person.id },
+								});
+							}}
+						>
+							{person.name}
+						</A>
 						{person.assignmentRole && (
 							<span className="small-text ml-3">{person.assignmentRole.name}</span>
 						)}
 					</div>
 				}
-				dialogFooter={(onHide) => (
-					<div className="flex justify-content-center">
-						<Button
-							onClick={onHide}
-							content={{ label: "Cancel" }}
-							inputVariant={"subtle"}
-						/>
-					</div>
-				)}
-				buttonContent={{
-					label: (
-						<ButtonWrapper>
-							<NameWrapper>{person?.name}</NameWrapper>
-							<SmallSpan>
-								{afterNameSlot}
-								{!hideGapDays && gapDaysEnabled ? gapDaysComponent : null}{" "}
-								{utilizationComponent}
-							</SmallSpan>
-						</ButtonWrapper>
-					),
-				}}
-				buttonVariant={"subtle"}
-				tooltip={{
-					content: hideTooltip
-						? undefined
-						: hasReadUtilizationPermission
-						? `${tooltipGapDays}${(
-								(utilization?.utilizationPercentage ?? 0) * 100
-						  ).toFixed(2)}% utilization`
-						: undefined,
-				}}
 			>
-				{() => (
-					<Suspense fallback={<Loader />}>
-						<PersonDetailsModalContent personId={person.id} scenarioId={scenario.id} />
-					</Suspense>
-				)}
-			</DialogButton>
-		</TkComponentsContext.Provider>
+				<Suspense fallback={<Loader />}>
+					<PersonDetailsModalContent personId={person.id} scenarioId={scenario.id} />
+				</Suspense>
+			</TkDialog>
+		</>
+
+		// tooltip={{
+		// 	content: hideTooltip
+		// 		? undefined
+		// 		: hasReadUtilizationPermission
+		// 		? `${tooltipGapDays}${(
+		// 				(utilization?.utilizationPercentage ?? 0) * 100
+		// 		  ).toFixed(2)}% utilization`
+		// 		: undefined,
+		// }}
 	);
 };
 

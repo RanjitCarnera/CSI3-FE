@@ -1,25 +1,27 @@
 import { useFormik } from "formik";
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import * as Yup from "yup";
 import { DefaultCalendarComponent } from "@components/ui/DefaultTextInput";
 import { ValidatedField } from "@components/ui/ValidatedField";
-import { selectScenarioPeopleFilters, setProjectViewPeopleFilters } from "@redux/ProjectViewSlice";
 import {
 	FormWrapper,
 	Wrapper,
 } from "@screens/project-view/parts/from-to-filters/from-to-filters.styles";
+import { applyFilter } from "@screens/project-view/parts/projects-grid-part/parts/projects-grid-part-content/projects-grid-part-content.utils";
 
-export const FromToFilters = () => {
-	const filters = useSelector(selectScenarioPeopleFilters);
-	const dispatch = useDispatch();
+interface Props {
+	initialState: { startDate?: string; endDate?: string };
+	onChange: (newValue: { startDate?: string; endDate?: string }) => void;
+	needsBoth?: boolean;
+	label: string;
+}
+
+export const FromToFilters = ({ initialState, onChange, needsBoth = true, label }: Props) => {
 	const formik = useFormik<{ startDate?: string; endDate?: string }>({
-		initialValues: {
-			startDate: filters.startDate,
-			endDate: filters.endDate,
-		},
+		initialValues: initialState,
 		validationSchema: Yup.object().shape({
 			startDate: Yup.string().test("yourTestCondition2", function (value, testContext) {
+				if (!needsBoth) return true;
 				if (testContext.parent.endDate && !value) {
 					return this.createError({ path: "startDate", message: "" });
 				}
@@ -27,6 +29,7 @@ export const FromToFilters = () => {
 				return true;
 			}),
 			endDate: Yup.string().test("yourTestCondition", function (value, testContext) {
+				if (!needsBoth) return true;
 				if (testContext.parent.startDate && !value) {
 					return this.createError({
 						path: "endDate",
@@ -63,46 +66,65 @@ export const FromToFilters = () => {
 		const endDate = endDateString ? new Date(endDateString) : new Date();
 		const bothAreSet = startDateString && endDateString;
 		const isCorrect = endDate.getTime() >= startDate.getTime();
+		if (!needsBoth) return;
+
 		if (!isCorrect || !bothAreSet) {
-			dispatch(
-				setProjectViewPeopleFilters({
-					...filters,
-					startDate: undefined,
-					endDate: undefined,
-				}),
-			);
+			onChange({
+				startDate: undefined,
+				endDate: undefined,
+			});
 		} else {
-			dispatch(
-				setProjectViewPeopleFilters({
-					...filters,
-					startDate: startDateString,
-					endDate: endDateString,
-				}),
-			);
+			onChange({
+				startDate: applyFilter(formik.values.startDate),
+				endDate: applyFilter(formik.values.endDate),
+			});
 		}
 	}, [formik.values]);
 
-	useEffect(() => {
-		void formik.setFieldValue("startDate", filters.startDate ?? "");
-		void formik.setFieldValue("endDate", filters.endDate ?? "");
-	}, [filters.startDate, filters.endDate]);
 	return (
 		<Wrapper>
 			<FormWrapper>
-				<ValidatedField
-					label={"Utilization Start"}
-					placeholder={"Utilization Start Date"}
+				<ValidatedField<{ startDate?: string; endDate?: string }, string | undefined>
+					label={`${label} start`}
+					placeholder={`${label} start date`}
 					name={"startDate"}
 					formikConfig={formik}
-					component={DefaultCalendarComponent}
+					component={(renderConfig) => (
+						<DefaultCalendarComponent
+							{...renderConfig}
+							updateField={(newStart) => {
+								renderConfig.updateField(newStart);
+								if (needsBoth) return;
+
+								const endDate = formik.values.endDate;
+								onChange({
+									startDate: newStart,
+									endDate,
+								});
+							}}
+						/>
+					)}
 				/>
 
-				<ValidatedField
-					label={"Utilization End"}
-					placeholder={"Utilization End Date"}
+				<ValidatedField<{ startDate?: string; endDate?: string }, string>
+					label={`${label} end`}
+					placeholder={`${label} end date`}
 					name={"endDate"}
 					formikConfig={formik}
-					component={DefaultCalendarComponent}
+					component={(renderConfig) => (
+						<DefaultCalendarComponent
+							{...renderConfig}
+							updateField={(newEnd) => {
+								renderConfig.updateField(newEnd);
+								if (needsBoth) return;
+								const startDate = formik.values.startDate;
+								onChange({
+									startDate,
+									endDate: newEnd,
+								});
+							}}
+						/>
+					)}
 				/>
 			</FormWrapper>
 		</Wrapper>

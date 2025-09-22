@@ -40,7 +40,7 @@ export const AssignmentAssignmentRolesTable = () => {
 		SET_ASSIGNMENT_ROLE_SORT_ORDERS,
 	);
 	const [initialLoad, setInitialLoadComplete] = useState(true);
-	const data = useLazyLoadQuery<assignmentRolesTable_Query>(QUERY, { first: 20, ...filters });
+	const data = useLazyLoadQuery<assignmentRolesTable_Query>(QUERY, { first: 200, ...filters });
 
 	const {
 		data: {

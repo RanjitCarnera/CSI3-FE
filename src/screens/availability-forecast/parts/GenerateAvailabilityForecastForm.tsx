@@ -3,8 +3,13 @@ import { graphql } from "babel-plugin-relay/macro";
 import { useFormik } from "formik";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useMutation } from "react-relay";
+import { readInlineData, useMutation } from "react-relay";
+import { match } from "ts-pattern";
 import * as Yup from "yup";
+import { type GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment$key } from "@relay/GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment.graphql";
+import { type GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment$key } from "@relay/GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment.graphql";
+import { type GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment$key } from "@relay/GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment.graphql";
+import { type GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment$key } from "@relay/GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment.graphql";
 import { type GenerateAvailabilityForecastForm_GenerateAvailabilityForecastMutation } from "../../../__generated__/GenerateAvailabilityForecastForm_GenerateAvailabilityForecastMutation.graphql";
 import {
 	AvailabilityForecastReportParametersFormPart,
@@ -28,34 +33,142 @@ const GENERATE_AVAILABILITY_FORECAST_MUTATION = graphql`
 		Availabilityforecast {
 			generateAvailabilityForecast(input: $input) {
 				availabilityForecast {
-					rows {
-						columns {
-							available
-							difference
-							needed
-							availablePeople {
-								id
-								name
-							}
-							yearMonth
-							projects
-						}
-						roles {
-							name
-						}
-					}
-					summary {
-						yearMonth
-						needed
-						difference
-						available
-						projects
-					}
-					yearAndMonths
-					countPossibleUtilizationNotPeople
+					kind
+					...GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment
+					...GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment
+					...GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment
+					...GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment
 				}
 			}
 		}
+	}
+`;
+
+const YEAR_MONTH_AVAILABILITY_FORECAST_INLINE_FRAGMENT = graphql`
+	fragment GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment on YearMonthAvailabilityForecast
+	@inline {
+		kind
+		rows {
+			columns {
+				available
+				difference
+				needed
+				availablePeople {
+					id
+					name
+				}
+				yearMonth
+				projects
+			}
+			roles {
+				name
+			}
+		}
+		summary {
+			yearMonth
+			needed
+			difference
+			available
+			projects
+		}
+		yearAndMonths
+		countPossibleUtilizationNotPeople
+	}
+`;
+
+const CALENDAR_WEEK_AVAILABILITY_FORECAST_INLINE_FRAGMENT = graphql`
+	fragment GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment on CalendarWeekAvailabilityForecast
+	@inline {
+		kind
+		rows {
+			columns {
+				available
+				difference
+				needed
+				availablePeople {
+					id
+					name
+				}
+				calendarWeek
+				projects
+			}
+			roles {
+				name
+			}
+		}
+		summary {
+			calendarWeek
+			needed
+			difference
+			available
+			projects
+		}
+		calendarWeeks
+		countPossibleUtilizationNotPeople
+	}
+`;
+
+const DAY_AVAILABILITY_FORECAST_INLINE_FRAGMENT = graphql`
+	fragment GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment on DayAvailabilityForecast
+	@inline {
+		kind
+		rows {
+			columns {
+				available
+				difference
+				needed
+				availablePeople {
+					id
+					name
+				}
+				date
+				projects
+			}
+			roles {
+				name
+			}
+		}
+		summary {
+			date
+			needed
+			difference
+			available
+			projects
+		}
+		dates
+		countPossibleUtilizationNotPeople
+	}
+`;
+
+const YEAR_QUARTER_AVAILABILITY_FORECAST_INLINE_FRAGMENT = graphql`
+	fragment GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment on YearQuarterAvailabilityForecast
+	@inline {
+		kind
+		rows {
+			columns {
+				available
+				difference
+				needed
+				availablePeople {
+					id
+					name
+				}
+				yearQuarter
+				projects
+			}
+			roles {
+				name
+			}
+		}
+		summary {
+			yearQuarter
+			needed
+			difference
+			available
+			projects
+		}
+		yearQuarters
+		countPossibleUtilizationNotPeople
 	}
 `;
 
@@ -77,7 +190,7 @@ interface OwnProps {
 export const GenerateAvailabilityForecastForm = ({ scenarioId, className }: OwnProps) => {
 	const parameters = useSelector(selectAvailabilityForecastParameters);
 	const dispatch = useDispatch();
-	const [generateForecast] =
+	const [generateForecast, isInFlight] =
 		useMutation<GenerateAvailabilityForecastForm_GenerateAvailabilityForecastMutation>(
 			GENERATE_AVAILABILITY_FORECAST_MUTATION,
 		);
@@ -94,6 +207,9 @@ export const GenerateAvailabilityForecastForm = ({ scenarioId, className }: OwnP
 			filterByRegionsOpt: parameters?.filterByRegionsOpt,
 			filterByStagesOpt: parameters?.filterByStagesOpt,
 			filterByDivisionsOpt: parameters?.filterByDivisionsOpt,
+			capInMonths: 12,
+
+			kind: parameters?.kind ?? "YearMonthAvailabilityForecast",
 		},
 		validationSchema: Yup.object().shape({
 			rows: Yup.array().test("rows", function (value) {
@@ -108,6 +224,7 @@ export const GenerateAvailabilityForecastForm = ({ scenarioId, className }: OwnP
 		}),
 		enableReinitialize: true,
 		onSubmit: (values, { setSubmitting }) => {
+			const capDisabled = Boolean(values.fromOpt || values.toOpt);
 			dispatch(setAvailabilityForecastParameters(values));
 			generateForecast({
 				variables: {
@@ -123,15 +240,44 @@ export const GenerateAvailabilityForecastForm = ({ scenarioId, className }: OwnP
 						countPossibleUtilizationNotPeople:
 							values.countPossibleUtilizationNotPeople || false,
 						showProjects: values.showProjects || false,
+						capInMonths: capDisabled ? null : values.capInMonths ?? 12,
+
+						kind: values.kind,
 					},
 				},
 				onCompleted: (response) => {
-					dispatch(
-						setAvailabilityForecast(
-							response.Availabilityforecast.generateAvailabilityForecast
-								?.availabilityForecast as any,
-						),
-					);
+					const forecast =
+						response.Availabilityforecast.generateAvailabilityForecast
+							?.availabilityForecast;
+					if (!forecast) return;
+					const inlineData = match(forecast.kind)
+						.with("YearMonthAvailabilityForecast", () =>
+							readInlineData<GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment$key>(
+								YEAR_MONTH_AVAILABILITY_FORECAST_INLINE_FRAGMENT,
+								forecast,
+							),
+						)
+						.with("CalendarWeekAvailabilityForecast", () =>
+							readInlineData<GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment$key>(
+								CALENDAR_WEEK_AVAILABILITY_FORECAST_INLINE_FRAGMENT,
+								forecast,
+							),
+						)
+						.with("DayAvailabilityForecast", () =>
+							readInlineData<GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment$key>(
+								DAY_AVAILABILITY_FORECAST_INLINE_FRAGMENT,
+								forecast,
+							),
+						)
+						.with("YearQuarterAvailabilityForecast", () =>
+							readInlineData<GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment$key>(
+								YEAR_QUARTER_AVAILABILITY_FORECAST_INLINE_FRAGMENT,
+								forecast,
+							),
+						)
+						.exhaustive();
+
+					dispatch(setAvailabilityForecast(inlineData));
 					setSubmitting(false);
 				},
 			});
@@ -162,11 +308,15 @@ export const GenerateAvailabilityForecastForm = ({ scenarioId, className }: OwnP
 					<AvailabilityForecastReportParametersFormPart formik={formik} />
 
 					<TkButton
-						disabled={formik.isSubmitting}
+						disabled={isInFlight || formik.isSubmitting}
 						onClick={() => {
 							formik.handleSubmit();
 						}}
-						label={formik.isSubmitting ? "Generating..." : "Generate Forecast"}
+						label={
+							isInFlight || formik.isSubmitting
+								? "Generating..."
+								: "Generate Forecast"
+						}
 					/>
 				</Form>
 			</div>

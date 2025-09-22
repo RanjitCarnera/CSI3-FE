@@ -18,6 +18,7 @@ export const EDIT_PROJECT_IN_SCENARIO_MUTATION = graphql`
 									cuc {
 										...EditAssignmentButton_CUCInlineFragment
 									}
+									...EditAssignmentButton_AssignmentFragment
 								}
 							}
 						}

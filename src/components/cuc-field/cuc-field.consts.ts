@@ -28,20 +28,6 @@ export const cucFormValidation = Yup.array()
 			}
 			return true;
 		},
-	)
-	.test(
-		"unique-name",
-		"Each marker must have a unique name.",
-		function (entries: MarkerInput[] | undefined) {
-			return true;
-			// TODO Layer 2
-			// if (!entries) return true;
-			// const names: string[] = entries
-			// 	.map((e) => e.name?.toLowerCase().trim())
-			// 	.filter((e): e is string => e !== undefined);
-			//
-			// return names.distinct().length === entries.length;
-		},
 	);
 
 export const baseOptions: ChartOptions<"line"> = {

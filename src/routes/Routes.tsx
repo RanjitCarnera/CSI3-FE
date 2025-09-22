@@ -26,6 +26,7 @@ import {
 	ScenarioMapViewScreen,
 } from "@screens/map-view/ScenarioMapViewScreen";
 import { PeopleScreen } from "@screens/people";
+import { SETTINGS_PEOPLE_PATH } from "@screens/people/people.consts";
 import { PERSONAL_DATA_SCREEN_PATH, PersonalDataScreen } from "@screens/personal-data";
 import { ProjectStagesScreen } from "@screens/project-stages";
 import {
@@ -97,7 +98,7 @@ export const Routes: RouteDefinition[] = [
 	},
 	{
 		requiredPermissions: ["UserInAccountPermission_Staff_Edit"],
-		path: "/settings/people",
+		path: SETTINGS_PEOPLE_PATH,
 		element: <PeopleScreen />,
 	},
 	{

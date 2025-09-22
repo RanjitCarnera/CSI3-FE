@@ -2,6 +2,7 @@ import { MultiSelect } from "primereact/multiselect";
 import { useEffect, useState } from "react";
 import { readInlineData, useRelayEnvironment } from "react-relay";
 import { fetchQuery } from "relay-runtime";
+import { withDebounce } from "@utils/with-debounce";
 import { PEOPLE_QUERY, PERSON_FRAGMENT } from "./people-select.graphql";
 import {
 	type peopleSelect_PersonFragment$data,
@@ -73,3 +74,5 @@ export const PeopleSelect = (fieldConfig: ValidatedFieldConfig<string[]>) => {
 		/>
 	);
 };
+
+export const DebouncedPeopleSelect = withDebounce(PeopleSelect);

@@ -1,7 +1,7 @@
 import React, { Fragment } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FilterTag } from "@components/ui/filter-tag";
-import { UtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
+import { DebouncedUtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
 import {
 	selectScenarioProjectFilters,
 	setProjectViewProjectFilters,
@@ -16,7 +16,7 @@ export const ProjectViewUtilizationStatusFilter = () => {
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"assignment-status"}>Utilization status</label>
 			<br />
-			<UtilizationStatusSelect
+			<DebouncedUtilizationStatusSelect
 				placeholder="Filter by utilization status"
 				fieldValue={projectFilters.peopleFilterUtilizationStatus}
 				updateField={(newValue) => {

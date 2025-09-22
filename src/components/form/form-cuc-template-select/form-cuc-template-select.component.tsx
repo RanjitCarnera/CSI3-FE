@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { readInlineData, useRelayEnvironment } from "react-relay";
 import { fetchQuery } from "relay-runtime";
-import styled from "styled-components";
 import { Conditional } from "@components/conditional";
 import {
 	BACKGROUND_COLOR,
@@ -15,17 +14,20 @@ import {
 } from "@components/cuc-field/cuc-field.consts";
 import { convertCUCToMarkerInputs } from "@components/cuc-field/cuc-field.utils";
 import { createInitialData } from "@components/cuc-field/parts/cuc-field-context/cuc-field-context.utils";
+import { CUC_INLINE_FRAGMENT } from "@components/relay/EditAssignmentButton";
 import type { ValidatedFieldConfig } from "@components/ui/ValidatedField";
+import { type EditAssignmentButton_CUCInlineFragment$key } from "@relay/EditAssignmentButton_CUCInlineFragment.graphql";
 import {
 	type formCucTemplateSelect_CucTemplateInlineFragment$data,
 	type formCucTemplateSelect_CucTemplateInlineFragment$key,
 } from "@relay/formCucTemplateSelect_CucTemplateInlineFragment.graphql";
 import { type formCucTemplateSelect_Query } from "@relay/formCucTemplateSelect_Query.graphql";
 import { CUC_TEMPLATE_INLINE_FRAGMENT, QUERY } from "./form-cuc-template-select.graphql";
-import { CUC_INLINE_FRAGMENT } from "@components/relay/EditAssignmentButton";
-import { type EditAssignmentButton_CUCInlineFragment$key } from "@relay/EditAssignmentButton_CUCInlineFragment.graphql";
 
-export const FormCucTemplateSelect = (fieldConfig: ValidatedFieldConfig<string>) => {
+export const FormCucTemplateSelect = ({
+	showPreviewButton = true,
+	...fieldConfig
+}: ValidatedFieldConfig<string> & { showPreviewButton?: boolean }) => {
 	const environment = useRelayEnvironment();
 	const op = useRef<OverlayPanel | null>(null);
 	const [data, setData] = useState<formCucTemplateSelect_CucTemplateInlineFragment$data[]>([]);
@@ -72,16 +74,20 @@ export const FormCucTemplateSelect = (fieldConfig: ValidatedFieldConfig<string>)
 						<Tooltip target={"#previewTrigger"} content={<span>Preview CUC</span>} />
 					</Conditional.Success>
 				</Conditional.Root>
-				<Button
-					id={"previewTrigger"}
-					onClick={(e) => {
-						op.current?.toggle(e);
-					}}
-					disabled={!selection}
-					type={"button"}
-				>
-					<i className="pi pi-search-plus" />
-				</Button>
+				<Conditional.Root condition={showPreviewButton}>
+					<Conditional.Success>
+						<Button
+							id={"previewTrigger"}
+							onClick={(e) => {
+								op.current?.toggle(e);
+							}}
+							disabled={!selection}
+							type={"button"}
+						>
+							<i className="pi pi-search-plus" />
+						</Button>
+					</Conditional.Success>
+				</Conditional.Root>
 
 				<Dropdown
 					className="dropdownWithTooltip"
@@ -111,7 +117,7 @@ export const FormCucTemplateSelect = (fieldConfig: ValidatedFieldConfig<string>)
 					}}
 				/>
 			</div>
-			<MyOverlayPanel ref={op} dismissable={true}>
+			<OverlayPanel ref={op} dismissable={true}>
 				{selection && (
 					<div style={{ width: "200px", height: "150px" }}>
 						<Line
@@ -146,13 +152,7 @@ export const FormCucTemplateSelect = (fieldConfig: ValidatedFieldConfig<string>)
 						/>
 					</div>
 				)}
-			</MyOverlayPanel>
+			</OverlayPanel>
 		</div>
 	);
 };
-
-const MyOverlayPanel = styled(OverlayPanel)`
-	&.p-overlaypanel.p-component {
-		z-index: 1150 !important;
-	}
-`;

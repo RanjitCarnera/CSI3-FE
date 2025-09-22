@@ -1,18 +1,18 @@
-import { InputNumber } from "primereact/inputnumber";
 import { OverlayPanel } from "primereact/overlaypanel";
 import { Panel, type PanelHeaderTemplateOptions } from "primereact/panel";
 import { classNames } from "primereact/utils";
-import React, { type HTMLAttributes, type MouseEvent, Suspense, useRef } from "react";
+import React, { type HTMLAttributes, type MouseEvent, Suspense, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
-import { DivisionsSelect } from "@components/relay/DivisionsSelect";
-import { PeopleSelect } from "@components/relay/people-select";
-import { RegionsSelect } from "@components/relay/RegionsSelect";
+import { DebouncedPrInputNumber } from "@components/debounced-pr-input-number";
+import { DebouncedAssignmentRolesSelect } from "@components/relay/AssignmentRolesSelect";
+import { DebouncedDivisionsSelect } from "@components/relay/DivisionsSelect";
+import { DebouncedPeopleSelect } from "@components/relay/people-select";
+import { DebouncedRegionsSelect } from "@components/relay/RegionsSelect";
 import { SkillCategorySelect } from "@components/relay/SkillCategorySelect";
-import { SkillsSelect } from "@components/relay/SkillsSelect";
-import { DefaultSalaryComponent } from "@components/ui/DefaultTextInput";
+import { DebouncedSkillsSelect } from "@components/relay/SkillsSelect";
+import { DebouncedDefaultSalaryComponent } from "@components/ui/DefaultTextInput";
 import { TkButton } from "@components/ui/TkButton";
-import { UtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
+import { DebouncedUtilizationStatusSelect } from "@components/ui/UtilizationStatusSelect";
 import { selectBudgetDisplay, selectHasPermissions } from "@redux/CurrentUserSlice";
 import {
 	selectScenarioPeopleFilters,
@@ -22,6 +22,7 @@ import {
 import { FromToFilters } from "@screens/project-view/parts/from-to-filters";
 
 export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) => {
+	const [refetchKey, setRefetchKey] = useState(0);
 	const filters = useSelector(selectScenarioPeopleFilters) || {};
 	const selectedProjectId = useSelector(selectSelectedProjectId);
 	const hasPermissions = useSelector(selectHasPermissions);
@@ -41,7 +42,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 			<label htmlFor={"assignment-roles-filter"}>Job Title</label>
 			<br />
 			<Suspense>
-				<AssignmentRolesSelect
+				<DebouncedAssignmentRolesSelect
 					fieldName="assignment-roles-filter"
 					fieldValue={filters.filterByAssignmentRoles}
 					placeholder={"Filter by assignment roles"}
@@ -61,7 +62,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor={"assignment-roles-filter"}>Utilization</label>
 			<br />
-			<UtilizationStatusSelect
+			<DebouncedUtilizationStatusSelect
 				fieldValue={filters.filterByUtilizationStatus}
 				placeholder={"Filter by utilization status"}
 				updateField={(e) => {
@@ -80,7 +81,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor={"salary-from-filter"}>Salary from</label>
 			<br />
-			<DefaultSalaryComponent
+			<DebouncedDefaultSalaryComponent
 				fieldName="salary-from-filter"
 				fieldValue={filters.filterBySalaryMinimum}
 				placeholder={"Salary from..."}
@@ -100,7 +101,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor={"salary-to-filter"}>Salary to</label>
 			<br />
-			<DefaultSalaryComponent
+			<DebouncedDefaultSalaryComponent
 				fieldName="salary-to-filter"
 				fieldValue={filters.filterBySalaryMaximum}
 				placeholder={"... salary to"}
@@ -121,7 +122,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor={"gap-days-from-filter"}>Gap days from</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="gap-days-from-filter"
 				value={filters.filterByGapDaysMinimum}
 				placeholder={"Gap days from..."}
@@ -129,18 +130,19 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 					dispatch(
 						setProjectViewPeopleFilters({
 							...filters,
-							filterByGapDaysMinimum: e.value ?? undefined,
+							filterByGapDaysMinimum: e ?? undefined,
 						}),
 					)
 				}
 			/>
 		</div>
 	);
+
 	const GapDaysToFilterComponent = gapDaysEnabled && (
 		<div className="field">
 			<label htmlFor={"gap-days-to-filter"}>Gap days to</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="gap-days-to-filter"
 				value={filters.filterByGapDaysMaximum}
 				placeholder={"... gap days to"}
@@ -148,18 +150,19 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 					dispatch(
 						setProjectViewPeopleFilters({
 							...filters,
-							filterByGapDaysMaximum: e.value ?? undefined,
+							filterByGapDaysMaximum: e ?? undefined,
 						}),
 					)
 				}
 			/>
 		</div>
 	);
+
 	const DistanceFromFilterComponent = (
 		<div className="field">
 			<label htmlFor={"distance-from-filter"}>Distances from</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="distance-from-filter"
 				disabled={!selectedProjectId}
 				tooltip={
@@ -172,18 +175,19 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 					dispatch(
 						setProjectViewPeopleFilters({
 							...filters,
-							filterByDistanceMinimum: e.value ?? undefined,
+							filterByDistanceMinimum: e ?? undefined,
 						}),
 					)
 				}
 			/>
 		</div>
 	);
+
 	const DistanceToFilterComponent = (
 		<div className="field">
 			<label htmlFor={"distance-to-filter"}>Distance to</label>
 			<br />
-			<InputNumber
+			<DebouncedPrInputNumber
 				name="distance-to-filter"
 				disabled={!selectedProjectId}
 				tooltip={
@@ -196,7 +200,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 					dispatch(
 						setProjectViewPeopleFilters({
 							...filters,
-							filterByDistanceMaximum: e.value ?? undefined,
+							filterByDistanceMaximum: e ?? undefined,
 						}),
 					)
 				}
@@ -207,7 +211,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor="regions-filter">Regions</label>
 			<br />
-			<RegionsSelect
+			<DebouncedRegionsSelect
 				fieldName={"regions-filter"}
 				fieldValue={filters.filterByRegions}
 				placeholder={"Filter by regions"}
@@ -226,7 +230,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 		<div className="field">
 			<label htmlFor="divisions-filter">Divisions</label>
 			<br />
-			<DivisionsSelect
+			<DebouncedDivisionsSelect
 				fieldName={"divisions-filter"}
 				fieldValue={filters.filterByDivisions}
 				placeholder={"Filter by divisions"}
@@ -268,7 +272,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 			<label htmlFor={"skills-filter"}>Attributes</label>
 			<br />
 			<Suspense>
-				<SkillsSelect
+				<DebouncedSkillsSelect
 					filterBySkillCategoryRef={filters.filterBySkillCategoryRef}
 					fieldName={"skills-filter"}
 					fieldValue={filters.filterBySkills}
@@ -291,7 +295,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 			<label htmlFor={"skills-staff"}>Staff</label>
 			<br />
 			<Suspense>
-				<PeopleSelect
+				<DebouncedPeopleSelect
 					fieldName={"skills-staff"}
 					fieldValue={filters.filterByStaff}
 					placeholder={"Filter by Staff"}
@@ -314,6 +318,7 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 				disabled={Object.entries(filters).length === 0}
 				label="Reset Filters"
 				onClick={() => {
+					setRefetchKey((k) => k + 1);
 					dispatch(setProjectViewPeopleFilters({ startDate: "", endDate: "" }));
 				}}
 			/>
@@ -376,9 +381,27 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 						)}
 						{withLineBreak(
 							<div className={flexClassName}>
-								<FromToFilters />
+								<FromToFilters
+									key={"utilization-window-" + refetchKey}
+									initialState={{
+										startDate: filters.startDate,
+										endDate: filters.endDate,
+									}}
+									needsBoth
+									onChange={(newValue) => {
+										dispatch(
+											setProjectViewPeopleFilters({
+												...filters,
+												startDate: newValue.startDate,
+												endDate: newValue.endDate,
+											}),
+										);
+									}}
+									label={"Utilization"}
+								/>
 							</div>,
 						)}
+
 						{withLineBreak(
 							<div className={flexClassName}>
 								{GapDaysFromFilterComponent}
@@ -398,6 +421,35 @@ export const RosterListFilters = ({ ...props }: HTMLAttributes<HTMLDivElement>) 
 							<div className={flexClassName}>
 								{SkillsCategoryFilterComponent}
 								{SkillsFilterComponent}
+								{withLineBreak(
+									<div className={flexClassName}>
+										<FromToFilters
+											key={"from-to-" + refetchKey}
+											initialState={{
+												startDate:
+													filters.filterBySkillExpirationDate?.from,
+												endDate: filters.filterBySkillExpirationDate?.to,
+											}}
+											needsBoth={false}
+											onChange={(newValue) => {
+												dispatch(
+													setProjectViewPeopleFilters({
+														...filters,
+														filterBySkillExpirationDate:
+															!!newValue.startDate ||
+															!!newValue.endDate
+																? {
+																		from: newValue.startDate,
+																		to: newValue.endDate,
+																  }
+																: undefined,
+													}),
+												);
+											}}
+											label={"Skill expiration date"}
+										/>
+									</div>,
+								)}
 							</div>,
 						)}
 					</p>

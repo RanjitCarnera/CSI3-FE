@@ -1,18 +1,13 @@
-import {TkButton} from "./TkButton";
+import { TkButton } from "./TkButton";
 
 interface OwnProps {
-    className?: string
+	className?: string;
 }
 
-export const FeedbackLink = ({className}: OwnProps) => {
-    return <a
-        className={className}
-        href="mailto:teambuilder@constructionintelligence.com"
-    >
-        <TkButton
-            icon="pi pi-envelope"
-            label="Feedback"
-        />
-    </a>
-
-}
+export const FeedbackLink = ({ className }: OwnProps) => {
+	return (
+		<a className={className} href="mailto:info@teamweave.io">
+			<TkButton icon="pi pi-envelope" label="Feedback" />
+		</a>
+	);
+};

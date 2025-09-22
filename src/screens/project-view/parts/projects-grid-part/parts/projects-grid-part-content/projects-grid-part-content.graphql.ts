@@ -47,6 +47,7 @@ export const PROJECT_IN_SCENARIO_INLINE_FRAGMENT = graphql`
 		id
 		project {
 			name
+			projectIdentifier
 			startDate
 			endDate
 			stage {

@@ -6,6 +6,7 @@ import { match } from "ts-pattern";
 import { PersonCard } from "@components/person-card";
 import { DraggablePersonCard } from "@components/person-card/parts/person-card-draggable";
 import { selectCurrentUser } from "@redux/CurrentUserSlice";
+import { type RosterList_StaffRefetch } from "@relay/RosterList_StaffRefetch.graphql";
 import { useProjectViewUtilizationWindow } from "@utils/use-utilization-window.hook";
 import { CheckScenarioPermissions } from "./CheckScenarioPermissions";
 import { type RosterList_ScenarioFragment$key } from "../../__generated__/RosterList_ScenarioFragment.graphql";
@@ -21,13 +22,14 @@ import { DriveTimeDisplay } from "../ui/DriveTimeDisplay";
 import { TkButtonLink } from "../ui/TkButtonLink";
 
 const SCENARIO_FRAGMENT = graphql`
-	fragment RosterList_ScenarioFragment on Scenario {
+	fragment RosterList_ScenarioFragment on Scenario
+	@argumentDefinitions(utilizationWindow: { type: "UtilizationWindowInput" }) {
 		id
 		...CheckScenarioPermissions_ScenarioFragment
-		...personCardDraggable_ScenarioFragment
+		...personCardDraggable_ScenarioFragment @arguments(utilizationWindow: $utilizationWindow)
 		...personCard_ScenarioFragment
 
-		utilization {
+		utilizationWithStandAndEndDate(utilizationWindow: $utilizationWindow) {
 			...personCard_ScenarioUtilizationFragment
 		}
 	}
@@ -58,6 +60,7 @@ const STAFF_FRAGMENT = graphql`
 		sortByClosestToProject: { type: "ID" }
 		filterByRegions: { type: "[ID!]" }
 		filterByDivisions: { type: "[ID!]" }
+		filterBySkillExpirationDate: { type: "LocalDateRangeFilterInput" }
 		utilizationWindow: { type: "UtilizationWindowInput" }
 	) {
 		node(id: $scenarioRef) {
@@ -90,7 +93,9 @@ const STAFF_FRAGMENT = graphql`
 				sortByClosestToProject: $sortByClosestToProject
 				filterByDivisions: $filterByDivisions
 				filterByRegions: $filterByRegions
+				filterBySkillExpirationDate: $filterBySkillExpirationDate
 				utilizationWindow: $utilizationWindow
+				activationStatus: true
 			) @connection(key: "RosterList_People") {
 				pageInfo {
 					endCursor
@@ -139,7 +144,7 @@ export const RosterList = memo(({ staffFragmentRef, scenarioFragmentRef }: OwnPr
 	const utilizationWindow = useProjectViewUtilizationWindow();
 
 	const { data, hasNext, refetch, loadNext } = usePaginationFragment<
-		any,
+		RosterList_StaffRefetch,
 		RosterList_StaffFragment$key
 	>(STAFF_FRAGMENT, staffFragmentRef);
 	const people = data.Staff.People.edges?.map((e) => e!.node!) ?? [];
@@ -163,8 +168,9 @@ export const RosterList = memo(({ staffFragmentRef, scenarioFragmentRef }: OwnPr
 				{
 					...filters,
 					filterByName: filters.filterByName,
-					alwaysIncludeIds: filters.filterByStaff,
+					filterByStaff: filters.filterByStaff,
 					scenarioRef: scenario.id,
+					filterBySkillExpirationDate: filters.filterBySkillExpirationDate,
 					first: 251,
 					sortByClosestToProject: selectedProjectId,
 					utilizationWindow,
@@ -209,7 +215,6 @@ export const RosterList = memo(({ staffFragmentRef, scenarioFragmentRef }: OwnPr
 					</Suspense>
 				</div>
 			)}
-
 			{people.length === 0 && (
 				<div>
 					There were no results. Add people to your roster or change your filter settings.
@@ -233,7 +238,7 @@ export const RosterList = memo(({ staffFragmentRef, scenarioFragmentRef }: OwnPr
 								scenarioFragmentRef={scenario}
 								personFragmentRef={person}
 								hideTotalVolume
-								scenarioUtilizationRef={scenario.utilization}
+								scenarioUtilizationRef={scenario.utilizationWithStandAndEndDate}
 							>
 								{DistanceDisplay}
 								<DriveTimeDisplay
@@ -254,7 +259,6 @@ export const RosterList = memo(({ staffFragmentRef, scenarioFragmentRef }: OwnPr
 					</CheckScenarioPermissions>
 				);
 			})}
-
 			{hasNext && (
 				<div className="flex justify-content-center align-items-center">
 					<TkButtonLink type="button" disabled={!hasNext} onClick={() => loadNext(20)}>

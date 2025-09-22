@@ -11,7 +11,7 @@ export const QUERY_FRAGMENT = graphql`
 	fragment assignmentRolesTable_AssignmentRolesQueryFragment on Query
 	@refetchable(queryName: "assignmentRolesTable_Refetch")
 	@argumentDefinitions(
-		first: { type: "Int", defaultValue: 20 }
+		first: { type: "Int", defaultValue: 200 }
 		after: { type: "String" }
 		filterByName: { type: "String" }
 	) {

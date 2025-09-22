@@ -1,10 +1,12 @@
 import React, { Fragment } from "react";
+import { useSelector } from "react-redux";
 import styled from "styled-components";
 import { match } from "ts-pattern";
 import { PersonCard } from "@components/person-card";
 import { PersonCardBaseStyles } from "@components/person-card/person-card.styles";
+import { selectShowWeights } from "@redux/StaffViewSlice";
+import { AllocationBarComponent } from "@screens/staff-view/parts/allocation-bar/component/allocation-bar.component";
 import { AllocationBarProvider } from "@screens/staff-view/parts/allocation-bar/context";
-import { AllocationBarComponent } from "@screens/staff-view/parts/AllocationBarComponent";
 import { IntervalHeaderComponent } from "@screens/staff-view/parts/IntervalHeaderComponent";
 import { StaffViewAllocationType } from "@screens/staff-view/parts/staff-view-part/staff-view-part.consts";
 import {
@@ -21,7 +23,7 @@ import {
 	SUBHEADER_SIZE,
 } from "@screens/staff-view/parts/staff-view.utils";
 
-function chunkArray(arr: any, size: number) {
+function chunkArray<T>(arr: readonly T[], size: number): readonly T[][] {
 	return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
 		arr.slice(i * size, i * size + size),
 	);
@@ -37,6 +39,8 @@ const StaffViewPrintComponent = ({
 	subheadingsOffset,
 }: StaffViewPrintProps) => {
 	const availableRows = getAvailableRows("A5", "portrait");
+	const showWeight = useSelector(selectShowWeights);
+	const sideBarSize = (showWeight ? 2 : 1) * SIDEBAR_SIZE;
 
 	return (
 		<div className="h-full overflow-scroll relative">
@@ -119,7 +123,11 @@ const StaffViewPrintComponent = ({
 
 						return laneChunks.map((laneChunk, chunkIndex) => {
 							const isFirstChunk = chunkIndex === 0;
-							const height = calculateLaneHeight(laneChunk.length);
+							const height = calculateLaneHeight(
+								laneChunk.length,
+								laneChunk.length > 1,
+								showWeight,
+							);
 							const heightWithSubheader =
 								height + (isFirstChunk && showSubheader ? SUBHEADER_SIZE : 0);
 							return (
@@ -145,13 +153,20 @@ const StaffViewPrintComponent = ({
 											}}
 										>
 											{isFirstChunk && showSubheader && (
-												<h3
+												<div
 													className="mt-0"
-													style={{ fontSize: 18, marginBottom: 5 }}
+													style={{
+														fontSize: "1rem",
+														paddingBottom: "1rem",
+														fontWeight: "bold",
+														textWrap: "nowrap",
+														textOverflow: "ellipsis",
+														overflowX: "hidden",
+													}}
 												>
 													{allocationGroup.assignmentRole?.name ??
 														allocationGroup.project?.name}
-												</h3>
+												</div>
 											)}
 											{isFirstChunk ? (
 												content
@@ -201,6 +216,9 @@ const StaffViewPrintComponent = ({
 															calculateLaneHeight(
 																staffViewAllocation?.lanes
 																	?.length ?? 0,
+																staffViewAllocation.lanes.length >
+																	1,
+																showWeight,
 															) +
 															MARGIN_BETWEEN_PEOPLE +
 															subheadingsOffset;
@@ -233,7 +251,10 @@ const StaffViewPrintComponent = ({
 																				allocationType
 																			}
 																			topOffset={
-																				50 * laneIndex
+																				(showWeight
+																					? 75
+																					: 50) *
+																				laneIndex
 																			}
 																		/>
 																	</AllocationBarWrapper>
@@ -256,22 +277,24 @@ const StaffViewPrintComponent = ({
 				<div className="relative bg-white">
 					{intervalDescriptions.map((interval, index) => {
 						return (
-							<IntervalContainer
-								printHeight={userOffset + subheadingsOffset}
-								className="z-5 absolute top-0 bottom-0"
-								key={"separator-" + index}
-								style={{
-									left: index * COLUMN_WIDTH,
-									borderLeft: `1px solid #d2d7e1`,
-									width: 1,
-									...(interval?.fallsIntoCustomUtilizationWindow && {
-										backgroundColor: "yellow",
-										opacity: 0.2,
-										width: COLUMN_WIDTH,
+							<div>
+								<IntervalContainer
+									printHeight={userOffset + subheadingsOffset}
+									className="z-5 absolute top-0 bottom-0"
+									key={"separator-" + index}
+									style={{
+										left: index * COLUMN_WIDTH,
 										borderLeft: `1px solid #d2d7e1`,
-									}),
-								}}
-							/>
+										width: 1,
+										...(interval?.fallsIntoCustomUtilizationWindow && {
+											backgroundColor: "yellow",
+											opacity: 0.2,
+											width: COLUMN_WIDTH,
+											borderLeft: `1px solid #d2d7e1`,
+										}),
+									}}
+								/>
+							</div>
 						);
 					})}
 				</div>

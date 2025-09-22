@@ -31,11 +31,12 @@ export const ProjectViewNameFilter = () => {
 
 	return (
 		<div>
-			<span className="p-input-icon-left w-12">
+			<span className="p-input-icon-left w-16">
 				<i className="pi pi-search" />
 				<InputText
+					className={"w-20rem"}
 					name="name-filter"
-					placeholder={"Search by Project Name"}
+					placeholder={"Search by project name or identifier..."}
 					value={state}
 					onChange={(e) => {
 						setState(e.target.value ?? "");

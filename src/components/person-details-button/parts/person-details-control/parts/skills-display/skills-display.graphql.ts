@@ -26,6 +26,7 @@ export const SKILL_ASSOCIATION_INLINE_FRAGMENT = graphql`
 					kind
 				}
 			}
+			expirationDate
 
 			skill {
 				id

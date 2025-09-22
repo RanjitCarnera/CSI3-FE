@@ -129,6 +129,8 @@ export const GenerateReportButton = ({ className, scenarioId }: OwnProps) => {
 			reportType: "ProjectReport",
 			tableHighlightColorOpt: undefined,
 			fileFormat: "pdf",
+			capInMonths: 12,
+			kind: "YearMonthAvailabilityForecast",
 		},
 		validationSchema: Yup.object().shape({
 			rows: Yup.array().test("rows", function (value) {
@@ -148,6 +150,7 @@ export const GenerateReportButton = ({ className, scenarioId }: OwnProps) => {
 			match(values.reportType)
 				.with("AvailabilityForecast", () => {
 					const valuesAs = values as AvailabilityForecastReportParametersFormState;
+					const capDisabled = Boolean(valuesAs.fromOpt || values.toOpt);
 					if (!valuesAs.fileFormat || valuesAs.fileFormat === "pdf") {
 						generateAvailabilityForecastReport({
 							variables: {
@@ -164,6 +167,8 @@ export const GenerateReportButton = ({ className, scenarioId }: OwnProps) => {
 									countPossibleUtilizationNotPeople:
 										valuesAs.countPossibleUtilizationNotPeople ?? false,
 									showProjects: valuesAs.showProjects ?? false,
+									capInMonths: capDisabled ? null : valuesAs.capInMonths ?? 12,
+									kind: valuesAs.kind,
 								},
 							},
 							onCompleted: (r) => {
@@ -194,6 +199,9 @@ export const GenerateReportButton = ({ className, scenarioId }: OwnProps) => {
 									countPossibleUtilizationNotPeople:
 										valuesAs.countPossibleUtilizationNotPeople ?? false,
 									showProjects: valuesAs.showProjects ?? false,
+									capInMonths: capDisabled ? null : valuesAs.capInMonths ?? 12,
+
+									kind: valuesAs.kind,
 								},
 							},
 							onCompleted: (r) => {
@@ -282,6 +290,11 @@ export const GenerateReportButton = ({ className, scenarioId }: OwnProps) => {
 								valuesAs.filterByAssignmentTagsOpt,
 							),
 							useAlternatingRowColors: true,
+							...(["AssignmentsWithSupersReport", "LondonOpsSuperReport"].includes(
+								valuesAs.reportType,
+							)
+								? { filterForWeeksPrior: 2 }
+								: {}),
 							kind: valuesAs.reportType,
 						},
 					};

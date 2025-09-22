@@ -1,4 +1,11 @@
 import { createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment$data } from "@relay/GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment.graphql";
+import type {
+	AvailabilityForecastKindEnum,
+	GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment$data,
+} from "@relay/GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment.graphql";
+import type { GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment$data } from "@relay/GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment.graphql";
+import type { GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment$data } from "@relay/GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment.graphql";
 import { type ReduxState } from "../Store";
 import { initializeFromUrl, updateUrl } from "../utils/url-utils";
 
@@ -19,12 +26,11 @@ export interface ForecastRow {
 	columns: ForecastColumn[];
 }
 
-export interface AvailabilityForecast {
-	yearAndMonths: string[];
-	rows: ForecastRow[];
-	summary: ForecastColumn[];
-	countPossibleUtilizationNotPeople: boolean;
-}
+export type AvailabilityForecast =
+	| GenerateAvailabilityForecastForm_YearMonthAvailabilityForecastInlineFragment$data
+	| GenerateAvailabilityForecastForm_CalendarWeekAvailabilityForecastInlineFragment$data
+	| GenerateAvailabilityForecastForm_DayAvailabilityForecastInlineFragment$data
+	| GenerateAvailabilityForecastForm_YearQuarterAvailabilityForecastInlineFragment$data;
 
 export interface ForecastRowParameter {
 	rolesRef: string[];
@@ -40,6 +46,7 @@ export interface AvailabilityForecastParameters {
 	countPossibleUtilizationNotPeople?: boolean;
 	showProjects?: boolean;
 	rows?: ForecastRowParameter[];
+	kind: AvailabilityForecastKindEnum;
 }
 
 export interface AvailabilityForecastState {
@@ -68,7 +75,7 @@ const regionSlice = createSlice({
 			updateUrl(URL_SEARCH_PARAM, { parameters: action.payload }, BASE_STATE);
 		},
 		setAvailabilityForecast: (state, action: PayloadAction<AvailabilityForecast>) => {
-			state.forecast = action.payload;
+			state.forecast = action.payload as Writable<AvailabilityForecast>;
 		},
 	},
 });

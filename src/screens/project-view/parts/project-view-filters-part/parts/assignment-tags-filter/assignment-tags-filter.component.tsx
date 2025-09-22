@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { TagsSelect } from "@components/tags-select";
+import { DebouncedTagsSelect } from "@components/tags-select";
 import {
 	selectScenarioProjectFilters,
 	setProjectViewProjectFilters,
@@ -14,7 +14,7 @@ export const ProjectViewAssignmentTagsFilter = () => {
 		<div className="field mr-2" style={{ minWidth: 250 }}>
 			<label htmlFor={"assignment-status"}>Assignment Tags</label>
 			<br />
-			<TagsSelect
+			<DebouncedTagsSelect
 				placeholder="Filter by assignment tags"
 				fieldValue={projectFilters.filterByAssignmentTags}
 				updateField={(newValue) => {

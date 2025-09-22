@@ -30,7 +30,8 @@ import { ValidatedField, type ValidatedFieldConfig } from "../ui/ValidatedField"
 const PERSON_FRAGMENT = graphql`
 	fragment EditPersonModal_PersonFragment on Person {
 		id
-		name
+		firstName
+		lastName
 		email
 		phone
 		salary
@@ -112,7 +113,8 @@ interface OwnProps {
 }
 
 interface FormState {
-	name?: string;
+	firstName?: string;
+	lastName?: string;
 	email?: string;
 	phone?: string;
 
@@ -155,7 +157,8 @@ export const EditPersonModal = ({
 
 	const formik = useFormik<FormState>({
 		initialValues: {
-			name: person?.name,
+			firstName: person?.firstName,
+			lastName: person?.lastName,
 			email: person?.email || undefined,
 			phone: person?.phone || undefined,
 			startDate: person?.startDate || undefined,
@@ -172,7 +175,8 @@ export const EditPersonModal = ({
 		},
 		enableReinitialize: true,
 		validationSchema: Yup.object().shape({
-			name: Yup.string().required("Name is a required field."),
+			firstName: Yup.string().required("Name is a required field."),
+			lastName: Yup.string().optional().nullable(),
 			email: Yup.string().email("E-Mail must be a valid email."),
 		}),
 		onSubmit: (values, { setSubmitting, resetForm }) => {
@@ -182,7 +186,8 @@ export const EditPersonModal = ({
 						input: {
 							personId: person.id,
 							data: {
-								name: values.name!,
+								firstName: values.firstName!,
+								lastName: values.lastName!,
 								email: values.email,
 								phone: values.phone,
 								startDate: values.startDate,
@@ -211,7 +216,8 @@ export const EditPersonModal = ({
 					variables: {
 						input: {
 							data: {
-								name: values.name!,
+								firstName: values.firstName!,
+								lastName: values.lastName!,
 								email: values.email,
 								phone: values.phone,
 								startDate: values.startDate,
@@ -272,9 +278,16 @@ export const EditPersonModal = ({
 			<Form onSubmit={formik.handleSubmit}>
 				<ValidatedField<FormState, string>
 					className="mb-4"
-					name={"name"}
-					label={"Name"}
+					name={"firstName"}
+					label={"First name"}
 					required={true}
+					formikConfig={formik}
+					component={DefaultTextFieldComponent}
+				/>
+				<ValidatedField<FormState, string>
+					className="mb-4"
+					name={"lastName"}
+					label={"Last name"}
 					formikConfig={formik}
 					component={DefaultTextFieldComponent}
 				/>

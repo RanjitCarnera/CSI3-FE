@@ -34,6 +34,11 @@ const CREATE_MUTATION = graphql`
 						...assignmentsInProject_AssignmentInlineFragment
 					}
 				}
+				edge {
+					node {
+						...syncAssignmentsCucButton_ProjectInScenarioFragment
+					}
+				}
 			}
 		}
 	}

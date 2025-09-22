@@ -6,6 +6,7 @@ import { Fragment } from "react";
 import { useLazyLoadQuery } from "react-relay";
 import { match } from "ts-pattern";
 import { type SkillFilter } from "@relay/RosterList_StaffRefetch.graphql";
+import { withDebounce } from "@utils/with-debounce";
 import { type SkillsSelect_Query } from "../../__generated__/SkillsSelect_Query.graphql";
 import { TkButtonLink } from "../ui/TkButtonLink";
 import { type ValidatedFieldConfig } from "../ui/ValidatedField";
@@ -177,3 +178,5 @@ export const SkillsSelect = ({
 		</div>
 	);
 };
+
+export const DebouncedSkillsSelect = withDebounce(SkillsSelect);

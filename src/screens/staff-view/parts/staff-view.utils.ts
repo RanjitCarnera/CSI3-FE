@@ -1,3 +1,5 @@
+export const WITH_WEIGHTS_MODIFIER = 1.75;
+
 export const HEADER_SIZE = 50;
 export const SUBHEADER_SIZE = 25;
 export const COLUMN_WIDTH = 100;
@@ -7,3 +9,4 @@ export const MARGIN_BETWEEN_LANES = 10;
 export const MARGIN_BETWEEN_PEOPLE = 30;
 export const HEADER_MARGIN = 20;
 export const LANE_MIN_HEIGHT = 70;
+export const LANE_ALLOCATION_BAR_HEIGHT = 30;

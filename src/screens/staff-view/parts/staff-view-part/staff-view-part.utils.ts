@@ -4,12 +4,18 @@ import {
 	LANE_HEIGHT,
 	LANE_MIN_HEIGHT,
 	MARGIN_BETWEEN_LANES,
+	WITH_WEIGHTS_MODIFIER,
 } from "@screens/staff-view/parts/staff-view.utils";
 
-export const calculateLaneHeight = (laneLength: number) => {
+export const calculateLaneHeight = (
+	laneAmount: number,
+	hasMoreThan1Lane: boolean,
+	showWeights: boolean,
+) => {
+	const factor = showWeights ? (hasMoreThan1Lane ? WITH_WEIGHTS_MODIFIER : 1) : 1;
 	return Math.max(
-		LANE_MIN_HEIGHT,
-		laneLength * LANE_HEIGHT + (laneLength - 1) * MARGIN_BETWEEN_LANES,
+		LANE_MIN_HEIGHT * factor,
+		laneAmount * (LANE_HEIGHT * factor) + (laneAmount - 1) * MARGIN_BETWEEN_LANES,
 	);
 };
 

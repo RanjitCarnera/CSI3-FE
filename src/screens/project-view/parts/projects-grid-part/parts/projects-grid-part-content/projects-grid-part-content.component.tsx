@@ -67,10 +67,14 @@ export const ProjectsGridContent = forwardRef(
 						}
 						return 0;
 					})
-					.filter((e) =>
-						e.project.name
-							.toLowerCase()
-							.includes(projectFilters.filterByName?.toLowerCase() ?? ""),
+					.filter(
+						(e) =>
+							e.project.name
+								.toLowerCase()
+								.includes(projectFilters.filterByName?.toLowerCase() ?? "") ||
+							(e.project.projectIdentifier ?? "")
+								.toLowerCase()
+								.includes(projectFilters.filterByName?.toLowerCase() ?? ""),
 					),
 			[projects, projectFilters.sorting, projectFilters.filterByName],
 		);

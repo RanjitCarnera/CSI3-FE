@@ -1,6 +1,7 @@
 import { MultiSelect } from "primereact/multiselect";
 import React from "react";
 import { type UtilizationStatus } from "@relay/RosterList_StaffRefetch.graphql";
+import { withDebounce } from "@utils/with-debounce";
 import { type ValidatedFieldConfig } from "./ValidatedField";
 
 export const UtilizationStatusSelect = (fieldConfig: ValidatedFieldConfig<UtilizationStatus[]>) => {
@@ -23,3 +24,5 @@ export const UtilizationStatusSelect = (fieldConfig: ValidatedFieldConfig<Utiliz
 		/>
 	);
 };
+
+export const DebouncedUtilizationStatusSelect = withDebounce(UtilizationStatusSelect);

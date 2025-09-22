@@ -5,6 +5,7 @@ import { type ViewType } from "@relay/ScenarioProjectViewScreen_Query.graphql";
 import {
 	type AssignmentStatus,
 	type IntervalType,
+	type LocalDateRangeFilterInput,
 	type SkillFilter,
 	type StaffViewSort,
 } from "@relay/staffViewPart_Query.graphql";
@@ -51,20 +52,34 @@ export interface StaffViewFilters {
 	peopleFilterSkills?: SkillFilter[];
 	peopleFilterSkillCategory?: string;
 	filterByAssignmentStatus?: AssignmentStatus;
+	filterBySkillExpirationDate?: LocalDateRangeFilterInput;
 }
+
+export interface AssignmentWeightForInterval {
+	assignmentRef: string;
+	intervalIndex: number;
+	weight?: number | null;
+}
+
 export interface StaffViewState {
 	filters: StaffViewFilters;
 	isStaffViewFiltersVisible: boolean;
 	shouldUseTagColor: boolean;
+	showWeights: boolean;
 	shouldSeeUseTagColorButton: boolean;
 	isInitialLoad?: boolean;
+	assignmentWeightsForIntervals: AssignmentWeightForInterval[];
+	changedAssignmentWeightsForIntervals: AssignmentWeightForInterval[];
 }
 
 const BASE_STATE: StaffViewState = {
 	filters: { intervalType: "Weeks", sort: "NameAsc" },
 	shouldUseTagColor: false,
+	showWeights: false,
 	shouldSeeUseTagColorButton: false,
 	isStaffViewFiltersVisible: false,
+	assignmentWeightsForIntervals: [],
+	changedAssignmentWeightsForIntervals: [],
 };
 
 const URL_SEARCH_PARAM = "filters";
@@ -80,9 +95,18 @@ const regionSlice = createSlice({
 	reducers: {
 		setStaffViewFilters: (state, action: PayloadAction<Draft<StaffViewFilters>>) => {
 			state.filters = action.payload;
+			if (state.filters.intervalType !== action.payload.intervalType) {
+				state.changedAssignmentWeightsForIntervals = [];
+			}
 			if (state.isInitialLoad === undefined) state.isInitialLoad = true;
 			else if (state.isInitialLoad) state.isInitialLoad = false;
-			updateUrl(URL_SEARCH_PARAM, { ...state, filters: action.payload }, BASE_STATE);
+			safeUpdateUrl(URL_SEARCH_PARAM, { ...state, filters: action.payload }, BASE_STATE);
+		},
+		setStaffViewAssignmentWeightsForIntervals(
+			state,
+			action: PayloadAction<AssignmentWeightForInterval[]>,
+		) {
+			state.assignmentWeightsForIntervals = action.payload;
 		},
 		clearStaffViewFilters: (state) => {
 			state.filters = {
@@ -90,15 +114,16 @@ const regionSlice = createSlice({
 				startDate: "",
 				endDate: "",
 			};
+			state.changedAssignmentWeightsForIntervals = [];
 			if (state.isInitialLoad === undefined) state.isInitialLoad = true;
 			else if (state.isInitialLoad) state.isInitialLoad = false;
-			updateUrl(URL_SEARCH_PARAM, { ...state, filters: BASE_STATE.filters }, BASE_STATE);
+			safeUpdateUrl(URL_SEARCH_PARAM, { ...state, filters: BASE_STATE.filters }, BASE_STATE);
 		},
 		setStaffViewFiltersVisible: (state, action: PayloadAction<boolean>) => {
 			state.isStaffViewFiltersVisible = action.payload;
 			if (state.isInitialLoad === undefined) state.isInitialLoad = true;
 			else if (state.isInitialLoad) state.isInitialLoad = false;
-			updateUrl(
+			safeUpdateUrl(
 				URL_SEARCH_PARAM,
 				{ ...state, isStaffViewFiltersVisible: action.payload },
 				BASE_STATE,
@@ -109,6 +134,17 @@ const regionSlice = createSlice({
 		},
 		setShouldSeeUseTagColorButton: (state, action: PayloadAction<boolean>) => {
 			state.shouldSeeUseTagColorButton = action.payload;
+		},
+		setShowWeights: (state, action: PayloadAction<boolean>) => {
+			state.showWeights = action.payload;
+			safeUpdateUrl(URL_SEARCH_PARAM, { ...state }, BASE_STATE);
+		},
+		setChangedAssignmentWeightsForInterval: (
+			state,
+			action: PayloadAction<AssignmentWeightForInterval[]>,
+		) => {
+			state.changedAssignmentWeightsForIntervals = action.payload;
+			safeUpdateUrl(URL_SEARCH_PARAM, { ...state }, BASE_STATE);
 		},
 		initializeFromPreferredView: (
 			state,
@@ -129,7 +165,7 @@ const regionSlice = createSlice({
 					"",
 					`/scenarios/U2NlbmFyaW86YTU1YzU4N2YtOGQ2Ny00NWIxLWFmZDAtYmFhMGZmZjRjMjhl/project-view`,
 				); */
-				updateUrl(
+				safeUpdateUrl(
 					URL_SEARCH_PARAM,
 					{ ...state },
 					BASE_STATE,
@@ -162,10 +198,28 @@ const regionSlice = createSlice({
 
 			state.isStaffViewFiltersVisible = defaultViewFilters.isStaffViewFiltersVisible;
 			state.filters = defaultViewFilters.filters as Draft<StaffViewFilters>;
-			updateUrl(URL_SEARCH_PARAM, { ...state }, BASE_STATE);
+			safeUpdateUrl(URL_SEARCH_PARAM, { ...state }, BASE_STATE);
 		},
 	},
 });
+
+const safeUpdateUrl = (
+	searchParam: string,
+	state: StaffViewState,
+	baseState: StaffViewState,
+	newUrl?: string,
+) => {
+	updateUrl(
+		searchParam,
+		{
+			...state,
+			assignmentWeightsForIntervals: [],
+			changedAssignmentWeightsForIntervals: [],
+		},
+		baseState,
+		newUrl,
+	);
+};
 
 export const {
 	setStaffViewFilters,
@@ -174,6 +228,9 @@ export const {
 	initializeFromDefaultView,
 	initializeFromPreferredView,
 	setShouldUseTagColor,
+	setShowWeights,
+	setChangedAssignmentWeightsForInterval,
+	setStaffViewAssignmentWeightsForIntervals,
 	setShouldSeeUseTagColorButton,
 } = regionSlice.actions;
 export const StaffViewSliceReducer = regionSlice.reducer;
@@ -197,3 +254,13 @@ export const selectShouldSeeUseTagColorButton = createSelector(
 	selectStaffViewSlice,
 	(state) => state.shouldSeeUseTagColorButton,
 );
+
+export const selectAssignmentWeightsForIntervals = createSelector(
+	selectStaffViewSlice,
+	(state) => state.assignmentWeightsForIntervals,
+);
+export const selectChangedAssignmentWeightsForIntervals = createSelector(
+	selectStaffViewSlice,
+	(state) => state.changedAssignmentWeightsForIntervals,
+);
+export const selectShowWeights = createSelector(selectStaffViewSlice, (state) => state.showWeights);
